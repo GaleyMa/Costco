@@ -95,14 +95,6 @@ public class Cola<T> {
         return cola[inicio + posicion];
     }
 
-    public void limpiar() {
-        inicio = -1;
-        fin = -1;
-        // Limpiar referencias para el garbage collector
-        for (int i = 0; i < MAX; i++) {
-            cola[i] = null;
-        }
-    }
 
     public int getCapacidadMaxima() {
         return MAX;

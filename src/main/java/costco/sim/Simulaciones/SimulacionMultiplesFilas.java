@@ -66,9 +66,6 @@ public class SimulacionMultiplesFilas extends Simulacion {
         }
         if (necesitaAbrirCaja) {
             boolean seAbrio = abrirSiguienteCaja();
-            if (seAbrio) {
-                redistribuirClientes();
-            }
         }
     }
 
@@ -84,49 +81,6 @@ public class SimulacionMultiplesFilas extends Simulacion {
 
         if (promedio <= UMBRAL_CERRAR_CAJA) {
             cerrarCajaVacia();
-        }
-    }
-
-    private void redistribuirClientes() {
-        Caja cajaRecienAbierta = null;
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
-            if (caja.estaAbierta() && caja.estaVacia()) {
-                cajaRecienAbierta = caja;
-                break;
-            }
-        }
-
-        if (cajaRecienAbierta == null) {
-            return;
-        }
-
-        // Encontrar las cajas más llenas y mover algunos clientes
-        // (solo mover clientes que aún no están pagando)
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
-
-            // Si la caja tiene más de 3 clientes
-            if (caja.estaAbierta() &&
-                    caja != cajaRecienAbierta &&
-                    caja.cantidadClientesEsperando() >= 3) {
-
-                // Mover hasta 2 clientes de la cola a la nueva caja
-                int clientesAMover = Math.min(2, caja.cantidadClientesEsperando());
-
-                for (int j = 0; j < clientesAMover; j++) {
-                    // Obtener el último cliente de la cola (simula que se cambia de fila)
-                    Cliente[] clientesEsperando = caja.getClientesEsperando();
-
-                    if (clientesEsperando != null && clientesEsperando.length > 0) {
-                        // Tomar el último cliente (el que acaba de llegar)
-                        Cliente clienteACambiar = clientesEsperando[clientesEsperando.length - 1];
-
-                        break;
-                    }
-                }
-                break;
-            }
         }
     }
 

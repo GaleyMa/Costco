@@ -34,33 +34,25 @@ public class Cliente {
         this.estado = Estado.EN_FILA_GENERAL;
     }
 
-    /**
-     * Asigna el cliente a una caja específica
-     */
+
     public void asignarACaja(int numeroCaja) {
         this.numeroCajaAsignada = numeroCaja;
         this.estado = Estado.EN_CAJA;
     }
 
-    /**
-     * Marca que el cliente comenzó a pagar
-     */
+
     public void iniciarPago(int tiempoActual, double duracionPago) {
         this.tiempoInicioPago = tiempoActual;
         this.tiempoFinPago = (int) Math.ceil(tiempoActual + duracionPago);
         this.estado = Estado.PAGANDO;
     }
 
-    /**
-     * Marca que el cliente terminó de pagar
-     */
+
     public void terminarPago(int tiempoActual) {
         this.estado = Estado.FINALIZADO;
     }
 
-    /**
-     * Verifica si el cliente ya terminó de pagar
-     */
+
     public boolean haTerminadoDePagar(int tiempoActual) {
         if (estado != Estado.PAGANDO) {
             return false;
@@ -68,10 +60,6 @@ public class Cliente {
         return tiempoActual >= tiempoFinPago;
     }
 
-    /**
-     * Calcula el tiempo total de espera del cliente
-     * (Desde que empieza a esperar hasta que empieza a pagar)
-     */
     public double getTiempoEspera() {
         if (tiempoInicioPago == 0) {
             return 0; // Aún no ha empezado a pagar
@@ -79,9 +67,7 @@ public class Cliente {
         return tiempoInicioPago - tiempoInicioEspera;
     }
 
-    /**
-     * Calcula el tiempo que tardó pagando
-     */
+
     public double getTiempoPago() {
         if (tiempoFinPago == 0 || tiempoInicioPago == 0) {
             return 0; // Aún no ha terminado de pagar
@@ -89,10 +75,7 @@ public class Cliente {
         return tiempoFinPago - tiempoInicioPago;
     }
 
-    /**
-     * Calcula el tiempo total en el sistema
-     * (Desde que empieza a esperar hasta que termina de pagar)
-     */
+
     public double getTiempoTotal() {
         if (tiempoFinPago == 0) {
             return 0; // Aún no ha terminado
@@ -100,10 +83,7 @@ public class Cliente {
         return tiempoFinPago - tiempoInicioEspera;
     }
 
-    /**
-     * Calcula el tiempo que lleva esperando actualmente
-     * (Solo si está en estado de espera)
-     */
+
     public double getTiempoEsperaActual(int tiempoActual) {
         if (estado == Estado.EN_CAJA ||
                 estado == Estado.EN_FILA_GENERAL) {

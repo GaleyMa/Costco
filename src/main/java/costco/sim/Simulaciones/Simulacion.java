@@ -72,23 +72,23 @@ public abstract class Simulacion {
 
 
     public void avanzarTiempo() {
-        if (!enEjecucion || terminada) {
+         if(!enEjecucion || terminada) {
             return;
         }
 
         tiempoActual++;
 
-        // 1. Verificar si llega un nuevo cliente
-        if (tiempoActual >= tiempoProximaLlegada) {
+        // ✅ SOLUCIÓN: Solo generar clientes ANTES de los 600 minutos
+        if (tiempoActual < TIEMPO_SIMULACION && tiempoActual >= tiempoProximaLlegada) {
             Cliente nuevoCliente = generarNuevoCliente();
             procesarLlegadaCliente(nuevoCliente);
-
             tiempoProximaLlegada = tiempoActual + generarTiempoLlegada();
         }
+
         procesarPagosEnCajas();
         gestionarCajas();
 
-        // Verificar si la simulación terminó
+        // Verificar si terminó
         if (tiempoActual >= TIEMPO_SIMULACION && todasCajasVacias()) {
             terminada = true;
             enEjecucion = false;
@@ -174,10 +174,9 @@ public abstract class Simulacion {
         for (int i = 0; i < cajas.size(); i++) {
             Caja caja = cajas.get(i);
             if (caja.estaAbierta()) {
-                caja.procesarPago(tiempoActual, random);
+                // ✅ SOLUCIÓN: procesarPago() ahora retorna el cliente terminado
+                Cliente clienteTerminado = caja.procesarPago(tiempoActual, random);
 
-                // Registrar clientes que terminaron de pagar
-                Cliente clienteTerminado = caja.obtenerClienteTerminado();
                 if (clienteTerminado != null) {
                     estadisticas.registrarCliente(clienteTerminado);
                 }

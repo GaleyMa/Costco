@@ -20,10 +20,7 @@ public class Caja {
     private int tiempoApertura;
     private int tiempoCierre;
 
-    /**
-     * Constructor de la caja
-     * @param numeroCaja Número identificador de la caja (1-12)
-     */
+
     public Caja(int numeroCaja) {
         this.numeroCaja = numeroCaja;
         this.abierta = false;
@@ -35,9 +32,6 @@ public class Caja {
         this.tiempoCierre = 0;
     }
 
-    /**
-     * Abre la caja para empezar a atender clientes
-     */
     public void abrir() {
         this.abierta = true;
     }
@@ -50,17 +44,11 @@ public class Caja {
         this.tiempoApertura = tiempoActual;
     }
 
-    /**
-     * Cierra la caja
-     */
+
     public void cerrar() {
         this.abierta = false;
     }
 
-    /**
-     * Cierra la caja registrando el tiempo de cierre
-     * Solo se puede cerrar si está vacía
-     */
     public boolean cerrar(int tiempoActual) {
         if (!estaVacia()) {
             return false; // No se puede cerrar con clientes
@@ -76,9 +64,7 @@ public class Caja {
         return true;
     }
 
-    /**
-     * Agrega un cliente a la cola de esta caja
-     */
+
     public boolean agregarCliente(Cliente cliente) {
         boolean agregado = colaClientes.insertar(cliente);
         if (agregado) {
@@ -87,18 +73,17 @@ public class Caja {
         return agregado;
     }
 
-    /**
-     * Procesa el pago del cliente actual o inicia el pago del siguiente
-     * @param tiempoActual Tiempo actual de la simulación
-     * @param random Generador de números aleatorios para el tiempo de pago
-     */
-    public void procesarPago(int tiempoActual, Random random) {
+    public Cliente procesarPago(int tiempoActual, Random random) {
+        Cliente clienteTerminado = null;
+
         // Si hay un cliente pagando, verificar si ya terminó
         if (clienteActualPagando != null) {
             if (clienteActualPagando.haTerminadoDePagar(tiempoActual)) {
                 clienteActualPagando.terminarPago(tiempoActual);
                 clientesAtendidos++;
-                clienteActualPagando = null; // Liberar la caja
+
+                clienteTerminado = clienteActualPagando;  // ✅ Guardar antes de limpiar
+                clienteActualPagando = null;  // Liberar la caja
             }
         }
 
@@ -108,42 +93,18 @@ public class Caja {
             double duracionPago = generarTiempoPago(random);
             clienteActualPagando.iniciarPago(tiempoActual, duracionPago);
         }
+
+        return clienteTerminado;  // ✅ Retornar cliente terminado
     }
 
-    /**
-     * Obtiene el cliente que acaba de terminar de pagar
-     */
-    public Cliente obtenerClienteTerminado() {
-        if (clienteActualPagando != null &&
-                clienteActualPagando.getEstado() == Estado.FINALIZADO) {
-            Cliente terminado = clienteActualPagando;
-            clienteActualPagando = null;
-            return terminado;
-        }
-        return null;
-    }
-
-
-
-    /**
-     * Genera un tiempo de pago aleatorio dentro del rango permitido
-     * @param random
-     * @return Tiempo de pago en minutos (3.0 - 5.0)
-     */
     private double generarTiempoPago(Random random) {
         return TIEMPO_PAGO_MIN + (random.nextDouble() * (TIEMPO_PAGO_MAX - TIEMPO_PAGO_MIN));
     }
 
-    /**
-     * Verifica si la caja está vacía (sin clientes esperando ni pagando)
-     */
     public boolean estaVacia() {
         return colaClientes.estaVacia() && clienteActualPagando == null;
     }
 
-    /**
-     * Obtiene la cantidad total de clientes (esperando + pagando)
-     */
     public int cantidadClientes() {
         int total = colaClientes.tamanio();
         if (clienteActualPagando != null) {
@@ -152,30 +113,21 @@ public class Caja {
         return total;
     }
 
-    /**
-     * Obtiene solo los clientes en espera (sin contar el que está pagando)
-     */
+
     public int cantidadClientesEsperando() {
         return colaClientes.tamanio();
     }
 
-    /**
-     * Verifica si hay un cliente pagando actualmente
-     */
     public boolean tieneClientePagando() {
         return clienteActualPagando != null;
     }
 
-    /**
-     * Verifica si la cola está llena
-     */
+
     public boolean colaLlena() {
         return colaClientes.estaLlena();
     }
 
-    /**
-     * Obtiene el tiempo restante de pago del cliente actual
-     */
+
     public double getTiempoRestantePago(int tiempoActual) {
         if (clienteActualPagando == null) {
             return 0;
@@ -184,9 +136,6 @@ public class Caja {
         return Math.max(0, tiempoRestante);
     }
 
-    /**
-     * Calcula el tiempo total que la caja ha estado abierta
-     */
     public int calcularTiempoTotalAbierta(int tiempoActual) {
         if (abierta && tiempoApertura > 0) {
             return tiempoAbiertaAcumulado + (tiempoActual - tiempoApertura);
@@ -194,19 +143,22 @@ public class Caja {
         return tiempoAbiertaAcumulado;
     }
 
-
-    /**
-     * Obtiene el siguiente cliente que será atendido (sin sacarlo de la cola)
-     */
     public Cliente getSiguienteCliente() {
         return colaClientes.peek();
     }
 
-    /**
-     * Obtiene todos los clientes en espera como arreglo
-     */
     public Cliente[] getClientesEsperando() {
-        return colaClientes.obtenerElementos();
+        Object[] elementos = colaClientes.obtenerElementos();
+
+        // Crear arreglo del tipo correcto
+        Cliente[] clientes = new Cliente[elementos.length];
+
+        // Copiar con cast
+        for (int i = 0; i < elementos.length; i++) {
+            clientes[i] = (Cliente) elementos[i];
+        }
+
+        return clientes;
     }
 
     /**
@@ -284,4 +236,6 @@ public class Caja {
                 clientesAtendidos,
                 tiempoAbiertaAcumulado);
     }
+
+
 }

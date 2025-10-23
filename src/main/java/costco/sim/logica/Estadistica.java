@@ -58,12 +58,6 @@ public class Estadistica {
         return getTiempoPromedioEspera() + getTiempoPromedioPago();
     }
 
-    public double calcularEficiencia(int tiempoTotalSimulacion) {
-        if (tiempoTotalSimulacion == 0) {
-            return 0;
-        }
-        return (double) totalClientesAtendidos / tiempoTotalSimulacion;
-    }
 
 
     public int getTotalClientesAtendidos() {
