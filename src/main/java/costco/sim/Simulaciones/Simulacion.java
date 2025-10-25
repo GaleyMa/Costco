@@ -242,9 +242,7 @@ public abstract class Simulacion {
     protected abstract void gestionarCajas();
 
     public String formatearTiempo(int minutos) {
-        int horas = minutos / 60;
-        int mins = minutos % 60;
-        return String.format("%d:%02d", horas, mins);
+        return null;
     }
 
     @Override
@@ -257,4 +255,6 @@ public abstract class Simulacion {
                 NUM_CAJAS,
                 terminada ? "TERMINADA" : (enEjecucion ? "EJECUTANDO" : "PAUSADA"));
     }
+
+    public abstract String getEstadoVisual();
 }

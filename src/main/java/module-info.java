@@ -10,7 +10,10 @@ module costco.sim {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires java.desktop;
 
     opens costco.sim to javafx.fxml;
     exports costco.sim;
+    exports costco.sim.grafica;
+    exports costco.sim.logica;
 }
