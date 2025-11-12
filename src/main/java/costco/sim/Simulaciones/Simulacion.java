@@ -257,4 +257,6 @@ public abstract class Simulacion {
     }
 
     public abstract String getEstadoVisual();
+
+    public abstract boolean esFilaUnica();
 }

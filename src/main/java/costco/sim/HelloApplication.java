@@ -10,16 +10,15 @@ public class HelloApplication extends Application {
     @Override
     public void start(Stage primaryStage) {
         try {
-            // Cargar el FXML
+
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/fxml/ventana_principal.fxml")
+                    getClass().getResource("/fxml/hello-view.fxml")
             );
             Parent root = loader.load();
 
-            // Crear la escena
+
             Scene scene = new Scene(root, 1200, 800);
 
-            // Configurar la ventana
             primaryStage.setTitle("Simulador de Filas - Costco Mexicali");
             primaryStage.setScene(scene);
             primaryStage.setResizable(false);

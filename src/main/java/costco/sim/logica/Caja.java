@@ -148,17 +148,7 @@ public class Caja {
     }
 
     public Cliente[] getClientesEsperando() {
-        Object[] elementos = colaClientes.obtenerElementos();
-
-        // Crear arreglo del tipo correcto
-        Cliente[] clientes = new Cliente[elementos.length];
-
-        // Copiar con cast
-        for (int i = 0; i < elementos.length; i++) {
-            clientes[i] = (Cliente) elementos[i];
-        }
-
-        return clientes;
+        return colaClientes.getElementosCola();
     }
 
     /**

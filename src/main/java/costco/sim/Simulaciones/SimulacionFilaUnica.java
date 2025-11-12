@@ -22,7 +22,12 @@ public class SimulacionFilaUnica extends Simulacion {
         return filaGeneral.tamanio();
     }
     public Cliente[] getClientesFilaGeneralArray() {
-        return filaGeneral.obtenerElementos();
+        Cola<Cliente> copia= new Cola<>(filaGeneral);
+        Cliente[] arreglo= new Cliente[getClientesEnFilaGeneral()];
+        for (int i = 0; i < getClientesEnFilaGeneral(); i++) {
+            arreglo[i]=copia.eliminar();
+        }
+        return arreglo;
     }
     public Cola<Cliente> getFilaGeneral() {
         return filaGeneral;
@@ -128,6 +133,11 @@ public class SimulacionFilaUnica extends Simulacion {
         }
 
         return sb.toString();
+    }
+
+    @Override
+    public boolean esFilaUnica() {
+        return true;
     }
 
     @Override

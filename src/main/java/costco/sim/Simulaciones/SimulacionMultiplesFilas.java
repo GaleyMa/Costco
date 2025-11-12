@@ -161,6 +161,12 @@ public class SimulacionMultiplesFilas extends Simulacion {
         return Math.sqrt(sumaDiferencias / cajasAbiertas);
     }
 
+
+    @Override
+    public boolean esFilaUnica() {
+        return false;
+    }
+
     @Override
     public String toString() {
         return String.format("SimulacionMultiplesFilas[tiempo=%s, cajas=%d/%d, esperando=%d, atendidos=%d, desv=%.2f]",

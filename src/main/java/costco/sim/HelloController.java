@@ -1,93 +1,111 @@
 package costco.sim;
-
-import costco.sim.grafica.ClienteGrafico;
-import costco.sim.logica.*;
 import costco.sim.Simulaciones.*;
+import costco.sim.logica.*;
+import costco.sim.grafica.CajaGrafica;
+import costco.sim.grafica.ClienteGrafico;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.layout.Pane;
 import javafx.scene.image.ImageView;
-import java.util.*;
 
-/**
- * Controlador principal - Maneja la lógica y las animaciones
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class HelloController {
 
-    // ==================== COMPONENTES FXML ====================
+    // Controles superiores
+    @FXML
+    private Label lblTiempo;
 
-    @FXML private Label lblTiempo;
-    @FXML private RadioButton rbFilaUnica;
-    @FXML private RadioButton rbMultiple;
-    @FXML private Button btnIniciar;
-    @FXML private Button btnPausar;
-    @FXML private Button btnDetener;
-    @FXML private ComboBox<String> cbVelocidad;
-    @FXML private StackPane areaJuego;
-    @FXML private ImageView imagenFondo;
-    @FXML private Pane panelAnimaciones;
-    @FXML private Label lblClientesAtendidos;
-    @FXML private Label lblEsperaPromedio;
-    @FXML private Label lblCajasAbiertas;
+    @FXML
+    private RadioButton rbFilaUnica;
 
-    // ==================== LÓGICA ====================
+    @FXML
+    private RadioButton rbMultiple;
 
+    @FXML
+    private ToggleGroup grupoMetodo;
+
+    @FXML
+    private Button btnIniciar;
+
+    @FXML
+    private Button btnPausar;
+
+    @FXML
+    private Button btnDetener;
+
+    @FXML
+    private ComboBox<String> cbVelocidad;
+
+    @FXML
+    private ProgressIndicator progreso;
+
+    // Área de juego
+    @FXML
+    private ImageView imagenFondo;
+
+    @FXML
+    private Pane panelAnimaciones;
+
+    // Estadísticas inferiores
+    @FXML
+    private Label lblClientesAtendidos;
+
+    @FXML
+    private Label lblEsperaPromedio;
+
+    @FXML
+    private Label lblCajasAbiertas;
+
+    // Lógica
     private Simulacion simulacion;
+    private List<CajaGrafica> cajasGraficas;
+    private List<ClienteGrafico> clientesGraficos = new ArrayList<>();
     private Timer timer;
     private boolean pausado = false;
     private final int[] VELOCIDADES = {1000, 500, 200, 100};
     private int velocidadActual = 1000;
 
-    // Clientes gráficos en pantalla
-    private Map<Integer, ClienteGrafico> clientesEnPantalla;
+    // Posiciones para la fila general
+    private static final int FILA_GENERAL_X = 50;
+    private static final int FILA_GENERAL_Y = 150;
+    private static final int ESPACIO_ENTRE_CLIENTES = 45;
 
-    // Posiciones de las cajas en pantalla
-    private static final int CAJAS_POR_FILA = 4;
-    private static final double INICIO_CAJAS_X = 100;
-    private static final double INICIO_CAJAS_Y = 300;
-    private static final double ESPACIO_ENTRE_CAJAS_X = 250;
-    private static final double ESPACIO_ENTRE_CAJAS_Y = 150;
-
-    // Posiciones de la fila general
-    private static final double FILA_GENERAL_X = 100;
-    private static final double FILA_GENERAL_Y = 100;
-    private static final double ESPACIO_ENTRE_CLIENTES = 50;
-
-    /**
-     * Se ejecuta al cargar el FXML
-     */
     @FXML
-    private void initialize() {
-        clientesEnPantalla = new HashMap<>();
+    public void initialize() {
+        // Configurar ComboBox de velocidad
+        cbVelocidad.getItems().addAll("1x", "2x", "5x", "10x");
+        cbVelocidad.setValue("1x");
 
-        // Ajustar el tamaño del panel de animaciones al área de juego
-        panelAnimaciones.prefWidthProperty().bind(areaJuego.widthProperty());
-        panelAnimaciones.prefHeightProperty().bind(areaJuego.heightProperty());
+        // Inicializar labels
+        lblTiempo.setText("Tiempo: 0/600 min");
+        lblClientesAtendidos.setText("Clientes: 0");
+        lblEsperaPromedio.setText("Espera Prom: 0.0 min");
+        lblCajasAbiertas.setText("Cajas: 0/12");
 
-        System.out.println("Controlador inicializado correctamente");
+        progreso.setProgress(0.0);
     }
 
-    // ==================== EVENTOS ====================
-
-    /**
-     * Inicia la simulación
-     */
     @FXML
     private void iniciarSimulacion() {
-        // Limpiar pantalla
-        panelAnimaciones.getChildren().clear();
-        clientesEnPantalla.clear();
-
-        // Crear simulación
+        // Crear simulación según el tipo seleccionado
         if (rbFilaUnica.isSelected()) {
             simulacion = new SimulacionFilaUnica();
         } else {
             simulacion = new SimulacionMultiplesFilas();
         }
 
-        // Dibujar cajas
-        dibujarCajas();
+        // Iniciar la simulación
+        simulacion.iniciar();
+
+        // Limpiar panel y crear cajas gráficas
+        panelAnimaciones.getChildren().clear();
+        clientesGraficos.clear();
+        crearCajasGraficas();
 
         // Deshabilitar controles
         rbFilaUnica.setDisable(true);
@@ -95,6 +113,10 @@ public class HelloController {
         btnIniciar.setDisable(true);
         btnPausar.setDisable(false);
         btnDetener.setDisable(false);
+
+        // Resetear estado
+        pausado = false;
+        progreso.setProgress(0.0);
 
         // Iniciar timer
         timer = new Timer(true);
@@ -108,36 +130,75 @@ public class HelloController {
         }, 0, velocidadActual);
     }
 
-    /**
-     * Pausa o reanuda
-     */
+    private void crearCajasGraficas() {
+        cajasGraficas = new ArrayList<>();
+        ArrayList<Caja> cajas = simulacion.getCajas();
+
+        // Posiciones de las cajas en pantalla (2 columnas, 6 filas)
+        int inicioCajasX = 157;
+        int inicioCajasY = 205;
+        int espacioEntreCajasX = 300;
+        int espacioEntreCajasY = 45;
+        int desplazamientoX = -40;
+
+        int indiceCaja = 0;
+
+        for (int fila = 0; fila < 6; fila++) {
+            for (int columna = 0; columna < 2; columna++) {
+                if (indiceCaja >= cajas.size()) break;
+
+                int posX = inicioCajasX + (columna * espacioEntreCajasX) + (fila * desplazamientoX);
+                int posY = inicioCajasY + (fila * espacioEntreCajasY);
+
+                CajaGrafica cajaGrafica = new CajaGrafica(cajas.get(indiceCaja),posX,posY);
+                //cajaGrafica.setLayoutX(posX);
+                //cajaGrafica.setLayoutY(posY);
+
+                cajasGraficas.add(cajaGrafica);
+                panelAnimaciones.getChildren().add(cajaGrafica);
+
+                indiceCaja++;
+            }
+        }
+    }
+
+    private void avanzarSimulacion() {
+        if (simulacion.haTerminado()) {
+            Platform.runLater(() -> {
+                detenerSimulacion();
+                mostrarResultadosFinales();
+            });
+            return;
+        }
+
+        // Avanzar un minuto en la simulación
+        simulacion.avanzarTiempo();
+
+        // Actualizar interfaz en el hilo de JavaFX
+        Platform.runLater(() -> actualizarInterfaz());
+    }
+
     @FXML
     private void pausarReanudar() {
         pausado = !pausado;
         btnPausar.setText(pausado ? "▶ REANUDAR" : "⏸ PAUSAR");
     }
 
-    /**
-     * Detiene la simulación
-     */
     @FXML
     private void detenerSimulacion() {
         if (timer != null) {
             timer.cancel();
             timer = null;
         }
-
         rbFilaUnica.setDisable(false);
         rbMultiple.setDisable(false);
         btnIniciar.setDisable(false);
         btnPausar.setDisable(true);
         btnDetener.setDisable(true);
         pausado = false;
+        progreso.setProgress(0.0);
     }
 
-    /**
-     * Cambia la velocidad
-     */
     @FXML
     private void cambiarVelocidad() {
         String vel = cbVelocidad.getValue();
@@ -164,164 +225,162 @@ public class HelloController {
         }
     }
 
-    // ==================== LÓGICA DE SIMULACIÓN ====================
-
-    /**
-     * Avanza un paso de la simulación
-     */
-    private void avanzarSimulacion() {
-        if (simulacion.haTerminado()) {
-            Platform.runLater(() -> {
-                detenerSimulacion();
-                mostrarResultadosFinales();
-            });
-            return;
-        }
-
-        simulacion.avanzarTiempo();
-        Platform.runLater(() -> actualizarVisualizacion());
-    }
-
-    /**
-     * Actualiza toda la visualización
-     */
-    private void actualizarVisualizacion() {
-        actualizarTiempo();
-        actualizarClientesEnPantalla();
-        actualizarEstadisticas();
-    }
-
-    /**
-     * Actualiza el label de tiempo
-     */
-    private void actualizarTiempo() {
+    private void actualizarInterfaz() {
+        // Actualizar tiempo y progreso
         int tiempo = simulacion.getTiempoActual();
         lblTiempo.setText(String.format("Tiempo: %d/600 min (%.1f%%)",
                 tiempo, (tiempo * 100.0 / 600)));
-    }
+        progreso.setProgress(tiempo / 600.0);
 
-    /**
-     * Actualiza los clientes en pantalla con animaciones
-     */
-    private void actualizarClientesEnPantalla() {
+        // LIMPIAR todos los clientes gráficos
+        limpiarClientes();
+
+        // Recrear clientes según el tipo de simulación
         if (simulacion instanceof SimulacionFilaUnica) {
-            actualizarFilaUnica();
+            actualizarClientesFilaUnica();
         } else {
-            actualizarMultiplesFilas();
+            actualizarClientesFilasMultiples();
         }
-    }
 
-    /**
-     * Actualiza visualización para fila única
-     */
-    private void actualizarFilaUnica() {
-        SimulacionFilaUnica simFila = (SimulacionFilaUnica) simulacion;
-
-        // TODO: Obtener clientes de la fila general y animarlos
-        // Por ahora solo actualizamos las cajas
-        actualizarCajas();
-    }
-
-    /**
-     * Actualiza visualización para múltiples filas
-     */
-    private void actualizarMultiplesFilas() {
-        actualizarCajas();
-    }
-
-    /**
-     * Actualiza los clientes en las cajas
-     */
-    private void actualizarCajas() {
-        List<Caja> cajas = simulacion.getCajas();
-
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
-
-            if (!caja.estaAbierta()) {
-                continue;
-            }
-
-            // Calcular posición de la caja
-            int fila = i / CAJAS_POR_FILA;
-            int columna = i % CAJAS_POR_FILA;
-
-            double cajaX = INICIO_CAJAS_X + columna * ESPACIO_ENTRE_CAJAS_X;
-            double cajaY = INICIO_CAJAS_Y + fila * ESPACIO_ENTRE_CAJAS_Y;
-
-            // Cliente pagando
-            if (caja.tieneClientePagando()) {
-                Cliente clientePagando = caja.getClienteActualPagando();
-                mostrarClienteEnCaja(clientePagando, cajaX, cajaY);
-            }
-
-            // Clientes esperando
-            Object[] clientesEsperando = caja.getClientesEsperando();
-            for (int j = 0; j < Math.min(clientesEsperando.length, 3); j++) {
-                Cliente c = (Cliente) clientesEsperando[j];
-                mostrarClienteEsperando(c, cajaX - 60 - j * 50, cajaY);
-            }
+        // Actualizar cajas gráficas
+        for (CajaGrafica cajaGrafica : cajasGraficas) {
+            cajaGrafica.actualizar();
         }
-    }
 
-    /**
-     * Muestra un cliente en una caja
-     */
-    private void mostrarClienteEnCaja(Cliente cliente, double x, double y) {
-        if (!clientesEnPantalla.containsKey(cliente.getId())) {
-            ClienteGrafico grafico = new ClienteGrafico(cliente, x, y);
-            clientesEnPantalla.put(cliente.getId(), grafico);
-            panelAnimaciones.getChildren().add(grafico);
-        } else {
-            ClienteGrafico grafico = clientesEnPantalla.get(cliente.getId());
-            grafico.actualizarImagen();
-            grafico.moverA(x, y, 500);
-        }
-    }
-
-    /**
-     * Muestra un cliente esperando
-     */
-    private void mostrarClienteEsperando(Cliente cliente, double x, double y) {
-        if (!clientesEnPantalla.containsKey(cliente.getId())) {
-            ClienteGrafico grafico = new ClienteGrafico(cliente, x, y);
-            clientesEnPantalla.put(cliente.getId(), grafico);
-            panelAnimaciones.getChildren().add(grafico);
-        }
-    }
-
-    /**
-     * Dibuja las cajas en pantalla
-     */
-    private void dibujarCajas() {
-        // Aquí puedes dibujar imágenes de cajas o usar formas geométricas
-        // Por ahora las dejamos invisibles, los clientes se posicionarán en sus coordenadas
-    }
-
-    /**
-     * Actualiza las estadísticas
-     */
-    private void actualizarEstadisticas() {
+        // Actualizar estadísticas
         Estadistica stats = simulacion.getEstadisticas();
-
-        lblClientesAtendidos.setText("Clientes: " + stats.getTotalClientesAtendidos());
+        lblClientesAtendidos.setText(String.format("Clientes: %d",
+                stats.getTotalClientesAtendidos()));
         lblEsperaPromedio.setText(String.format("Espera Prom: %.2f min",
                 stats.getTiempoPromedioEspera()));
 
-        long cajasAbiertas = simulacion.getCajas().stream()
-                .filter(Caja::estaAbierta)
-                .count();
-        lblCajasAbiertas.setText("Cajas: " + cajasAbiertas + "/12");
+        int cajasAbiertas = simulacion.getCajasAbiertas();
+        lblCajasAbiertas.setText(String.format("Cajas: %d/12", cajasAbiertas));
     }
 
-    /**
-     * Muestra resultados finales
-     */
+    private void limpiarClientes() {
+        // Remover todos los clientes gráficos del panel
+        for (ClienteGrafico clienteGrafico : clientesGraficos) {
+            panelAnimaciones.getChildren().remove(clienteGrafico);
+        }
+        clientesGraficos.clear();
+    }
+
+    private void actualizarClientesFilaUnica() {
+        SimulacionFilaUnica simFilaUnica = (SimulacionFilaUnica) simulacion;
+        Cola<Cliente> colaGlobal = simFilaUnica.getFilaGeneral();
+
+        System.out.println("DEBUG: Tamaño de cola global: " + colaGlobal.tamanio());
+
+        // Obtener y dibujar clientes en la fila general
+        Cliente[] clientesEnFila = getElementosCola(colaGlobal);
+
+        System.out.println("DEBUG: Clientes en fila: " + clientesEnFila.length);
+
+        for (int i = 0; i < clientesEnFila.length; i++) {
+            Cliente cliente = clientesEnFila[i];
+            double posX = FILA_GENERAL_X + (i * ESPACIO_ENTRE_CLIENTES);
+            double posY = FILA_GENERAL_Y;
+
+            ClienteGrafico clienteGrafico = new ClienteGrafico(cliente, posX, posY);
+
+            clientesGraficos.add(clienteGrafico);
+            panelAnimaciones.getChildren().add(clienteGrafico);
+        }
+
+        System.out.println("DEBUG: Clientes en fila general creados: " + clientesEnFila.length);
+
+        // Dibujar clientes siendo atendidos en cajas
+        ArrayList<Caja> cajas = simulacion.getCajas();
+        for (int i = 0; i < cajas.size() && i < cajasGraficas.size(); i++) {
+            Caja caja = cajas.get(i);
+            CajaGrafica cajaGrafica = cajasGraficas.get(i);
+            Cliente clienteAtendiendo = caja.getClienteActualPagando();
+
+            if (clienteAtendiendo != null) {
+                double posX = cajaGrafica.getLayoutX() - 50;
+                double posY = cajaGrafica.getLayoutY();
+
+                ClienteGrafico clienteGrafico = new ClienteGrafico(clienteAtendiendo, posX, posY);
+
+                clientesGraficos.add(clienteGrafico);
+                panelAnimaciones.getChildren().add(clienteGrafico);
+
+                System.out.println("DEBUG: Cliente atendiendo en caja " + i);
+            }
+        }
+
+        System.out.println("DEBUG: Total clientes gráficos creados: " + clientesGraficos.size());
+        System.out.println("DEBUG: Hijos en panelAnimaciones: " + panelAnimaciones.getChildren().size());
+    }
+
+    private void actualizarClientesFilasMultiples() {
+        ArrayList<Caja> cajas = simulacion.getCajas();
+
+        System.out.println("DEBUG: Actualizando filas múltiples");
+
+        for (int i = 0; i < cajas.size() && i < cajasGraficas.size(); i++) {
+            Caja caja = cajas.get(i);
+            CajaGrafica cajaGrafica = cajasGraficas.get(i);
+            Cola<Cliente> colaCaja = caja.getColaClientes();
+
+            System.out.println("DEBUG: Caja " + i + " tiene " + colaCaja.tamanio() + " clientes");
+
+            // Dibujar clientes en la cola de la caja
+            Cliente[] clientesEnCola = getElementosCola(colaCaja);
+
+            for (int j = 0; j < clientesEnCola.length; j++) {
+                Cliente cliente = clientesEnCola[j];
+                double posX = cajaGrafica.getLayoutX() - 100 - (j * 45);
+                double posY = cajaGrafica.getLayoutY();
+
+                ClienteGrafico clienteGrafico = new ClienteGrafico(cliente, posX, posY);
+
+                clientesGraficos.add(clienteGrafico);
+                panelAnimaciones.getChildren().add(clienteGrafico);
+            }
+
+            // Dibujar cliente siendo atendido
+            Cliente clienteAtendiendo = caja.getClienteActualPagando();
+            if (clienteAtendiendo != null) {
+                double posX = cajaGrafica.getLayoutX() - 50;
+                double posY = cajaGrafica.getLayoutY();
+
+                ClienteGrafico clienteGrafico = new ClienteGrafico(clienteAtendiendo, posX, posY);
+
+                clientesGraficos.add(clienteGrafico);
+                panelAnimaciones.getChildren().add(clienteGrafico);
+            }
+        }
+
+        System.out.println("DEBUG: Total clientes gráficos creados: " + clientesGraficos.size());
+    }
+    public Cliente[] getElementosCola( Cola<Cliente> cola ) {
+        Cola<Cliente> copia= new Cola<>(cola);
+        Cliente[] arreglo= new Cliente[cola.tamanio()];
+        for (int i = 0; i < cola.tamanio(); i++) {
+            arreglo[i]=copia.eliminar();
+        }
+        return arreglo;
+    }
     private void mostrarResultadosFinales() {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Simulación Completada");
-        alert.setHeaderText("¡La simulación ha terminado!");
-        alert.setContentText(simulacion.getEstadisticas().generarReporte());
+        alert.setHeaderText("La simulación ha terminado");
+
+        Estadistica stats = simulacion.getEstadisticas();
+        String contenido = String.format(
+                "Clientes atendidos: %d\n" +
+                        "Tiempo espera promedio: %.2f min\n" +
+                        "Tiempo pago promedio: %.2f min\n" +
+                        "Tiempo total promedio: %.2f min",
+                stats.getTotalClientesAtendidos(),
+                stats.getTiempoPromedioEspera(),
+                stats.getTiempoPromedioPago(),
+                stats.getTiempoPromedioTotal()
+        );
+
+        alert.setContentText(contenido);
         alert.showAndWait();
     }
 }

@@ -12,6 +12,12 @@ public class Cola<T> {
         this.fin = -1;
         this.cola = (T[]) new Object[MAX];
     }
+    public Cola(Cola a){
+        this.cola = (T[]) a.cola;
+        this.inicio=a.inicio;
+        this.fin=a.fin;
+        this.MAX=a.MAX;
+    }
 
     public Cola(int max) {
         this.MAX = max;
@@ -19,7 +25,6 @@ public class Cola<T> {
         this.fin = -1;
         this.cola = (T[]) new Object[MAX];
     }
-
 
     public boolean insertar(T elemento) {
         boolean done = false;
@@ -58,12 +63,17 @@ public class Cola<T> {
     public boolean estaVacia() {
         return inicio == -1;
     }
-
-
+    public T[] getElementosCola( ) {
+        Cola<T> copia= new Cola<>();
+        T[] arreglo= (T[]) new Object[tamanio()];
+        for (int i = 0; i < tamanio(); i++) {
+            arreglo[i]=copia.eliminar();
+        }
+        return arreglo;
+    }
     public boolean estaLlena() {
         return fin == MAX - 1;
     }
-
 
     public int tamanio() {
         if (inicio == -1) {
@@ -72,48 +82,7 @@ public class Cola<T> {
         return fin - inicio + 1;
     }
 
-
-    public T[] obtenerElementos() {
-        if (inicio == -1) {
-            return (T[]) new Object[0];
-        }
-
-        int cantidad = tamanio();
-        T[] elementos = (T[]) new Object[cantidad];
-
-        for (int i = 0; i < cantidad; i++) {
-            elementos[i] = cola[inicio + i];
-        }
-
-        return elementos;
-    }
-
     public T obtenerEnPosicion(int posicion) {
-        if (inicio == -1 || posicion < 0 || posicion >= tamanio()) {
-            return null;
-        }
-        return cola[inicio + posicion];
-    }
-
-
-    public int getCapacidadMaxima() {
-        return MAX;
-    }
-
-    @Override
-    public String toString() {
-        if (inicio == -1) {
-            return "Cola: []";
-        }
-
-        StringBuilder sb = new StringBuilder("Cola: [");
-        for (int i = inicio; i <= fin; i++) {
-            sb.append(cola[i]);
-            if (i < fin) {
-                sb.append(", ");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+        return cola[posicion];
     }
 }

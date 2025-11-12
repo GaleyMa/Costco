@@ -6,49 +6,43 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
-/**
- * Sprite animado de un cliente que se mueve por la tienda
- */
+import java.util.Objects;
+import java.util.Random;
+
+
 public class ClienteGrafico extends ImageView {
 
     private Cliente cliente;
     private static Image imagenEsperando;
     private static Image imagenPagando;
 
-    // Cargar imágenes una sola vez
-    static {
-        try {
-            imagenEsperando = new Image(
-                    ClienteGrafico.class.getResourceAsStream("/imagenes/cliente_esperando.png")
-            );
-            imagenPagando = new Image(
-                    ClienteGrafico.class.getResourceAsStream("/imagenes/cliente_pagando.png")
-            );
-        } catch (Exception e) {
-            System.err.println("Error cargando imágenes: " + e.getMessage());
-        }
-    }
+
 
     public ClienteGrafico(Cliente cliente, double x, double y) {
         super();
         this.cliente = cliente;
 
-        // Configurar tamaño
+        asignacionDeCliente();
         this.setFitWidth(40);
         this.setFitHeight(50);
         this.setPreserveRatio(true);
 
-        // Posición inicial
         this.setX(x);
         this.setY(y);
 
-        // Imagen inicial
         actualizarImagen();
     }
 
-    /**
-     * Actualiza la imagen según el estado
-     */
+    public ClienteGrafico(Cliente clienteAtendiendo) {
+        this.cliente = clienteAtendiendo;
+        asignacionDeCliente();
+        asignacionDeCliente();
+        this.setFitWidth(40);
+        this.setFitHeight(50);
+        this.setPreserveRatio(true);
+    }
+
+
     public void actualizarImagen() {
         if (cliente.getEstado() == Estado.PAGANDO) {
             this.setImage(imagenPagando);
@@ -83,19 +77,32 @@ public class ClienteGrafico extends ImageView {
 
         transicion.play();
     }
+    private void asignacionDeCliente(){
+        Random rand = new Random();
+        int numero = rand.nextInt(1,4);
 
-    /**
-     * Hace que el cliente "rebote" ligeramente (para cuando está esperando)
-     */
-    public void animarEspera() {
-        TranslateTransition rebote = new TranslateTransition(
-                Duration.millis(500),
-                this
-        );
-        rebote.setByY(-5);
-        rebote.setCycleCount(2);
-        rebote.setAutoReverse(true);
-        rebote.play();
+        switch (numero){
+            case 1:
+                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente1.png")));
+                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente1_pagando.png")));
+                break;
+            case 2:
+                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente2.png")));
+                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente2_pagando.png")));
+                break;
+            case 3:
+                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente3.png")));
+                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente3_pagando.png")));
+                break;
+            case 4:
+                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente4.png")));
+                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente4_pagando.png")));
+                break;
+            default:
+                imagenEsperando = null;
+                imagenPagando = null;
+                System.out.println("Error al cargar imagen de cliente");
+        }
     }
 
     public Cliente getCliente() {
