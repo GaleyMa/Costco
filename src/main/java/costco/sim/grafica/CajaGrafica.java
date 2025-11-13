@@ -23,11 +23,10 @@ public class CajaGrafica extends StackPane {
     private Label lblNumero;
     private Label lblAtendidos;
 
-    // Imágenes estáticas (se cargan una sola vez)
     private static Image imagenAbierta;
     private static Image imagenCerrada;
 
-    // Cargar imágenes al iniciar la clase
+
     static {
         try {
             imagenAbierta = new Image(
@@ -52,7 +51,6 @@ public class CajaGrafica extends StackPane {
         this.setLayoutY(y);
 
         crearComponentes();
-        actualizar();
     }
 
     private void crearComponentes() {
@@ -61,6 +59,8 @@ public class CajaGrafica extends StackPane {
         imagenCaja.setFitWidth(120);
         imagenCaja.setFitHeight(100);
         imagenCaja.setPreserveRatio(true);
+
+        imagenCaja.setImage(imagenCerrada);
 
         // Label con número de caja (encima de la imagen)
         lblNumero = new Label("CAJA " + caja.getNumeroCaja());
@@ -84,7 +84,6 @@ public class CajaGrafica extends StackPane {
         this.getChildren().addAll(imagenCaja, lblNumero, lblAtendidos);
     }
 
-
     public void actualizar() {
 
         if (caja.estaAbierta()) {
@@ -95,10 +94,7 @@ public class CajaGrafica extends StackPane {
             lblNumero.setTextFill(Color.GRAY);
         }
 
-        // Actualizar contador de clientes atendidos
         lblAtendidos.setText("Atendidos: " + caja.getClientesAtendidos());
-
-        // Mostrar/ocultar label de atendidos según esté abierta
         lblAtendidos.setVisible(caja.estaAbierta());
     }
 

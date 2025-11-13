@@ -1,4 +1,8 @@
 package costco.sim;
+
+
+
+
 import costco.sim.Simulaciones.*;
 import costco.sim.logica.*;
 import costco.sim.grafica.CajaGrafica;
@@ -14,9 +18,14 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+
 public class HelloController {
 
-    // Controles superiores
     @FXML
     private Label lblTiempo;
 
@@ -70,98 +79,116 @@ public class HelloController {
     private final int[] VELOCIDADES = {1000, 500, 200, 100};
     private int velocidadActual = 1000;
 
-    // Posiciones para la fila general
-    private static final int FILA_GENERAL_X = 50;
-    private static final int FILA_GENERAL_Y = 150;
+
+    private static final double ENTRADA_CLIENTES_X = 1150;
+    private static final double ENTRADA_CLIENTES_Y = 350;
+    private static final double FILA_INICIO_X = 600;
+    private static final double FILA_Y = 350;
     private static final int ESPACIO_ENTRE_CLIENTES = 45;
+
+    private Map<Cliente, ClienteGrafico> mapaClientesGraficos = new HashMap<>();
+
 
     @FXML
     public void initialize() {
-        // Configurar ComboBox de velocidad
+
         cbVelocidad.getItems().addAll("1x", "2x", "5x", "10x");
         cbVelocidad.setValue("1x");
 
-        // Inicializar labels
         lblTiempo.setText("Tiempo: 0/600 min");
         lblClientesAtendidos.setText("Clientes: 0");
         lblEsperaPromedio.setText("Espera Prom: 0.0 min");
         lblCajasAbiertas.setText("Cajas: 0/12");
-
+        mapaClientesGraficos = new HashMap<>();
         progreso.setProgress(0.0);
     }
 
     @FXML
     private void iniciarSimulacion() {
-        // Crear simulación según el tipo seleccionado
-        if (rbFilaUnica.isSelected()) {
-            simulacion = new SimulacionFilaUnica();
-        } else {
-            simulacion = new SimulacionMultiplesFilas();
-        }
+        try {
+            System.out.println("DEBUG: Iniciando simulación...");
 
-        // Iniciar la simulación
-        simulacion.iniciar();
-
-        // Limpiar panel y crear cajas gráficas
-        panelAnimaciones.getChildren().clear();
-        clientesGraficos.clear();
-        crearCajasGraficas();
-
-        // Deshabilitar controles
-        rbFilaUnica.setDisable(true);
-        rbMultiple.setDisable(true);
-        btnIniciar.setDisable(true);
-        btnPausar.setDisable(false);
-        btnDetener.setDisable(false);
-
-        // Resetear estado
-        pausado = false;
-        progreso.setProgress(0.0);
-
-        // Iniciar timer
-        timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (!pausado) {
-                    avanzarSimulacion();
-                }
+            if (rbFilaUnica.isSelected()) {
+                System.out.println("DEBUG: Creando SimulacionFilaUnica");
+                simulacion = new SimulacionFilaUnica();
+            } else {
+                System.out.println("DEBUG: Creando SimulacionMultiplesFilas");
+                simulacion = new SimulacionMultiplesFilas();
             }
-        }, 0, velocidadActual);
+
+            simulacion.iniciar();
+
+            panelAnimaciones.getChildren().clear();
+            clientesGraficos.clear();
+            mapaClientesGraficos.clear();
+            crearCajasGraficas();
+
+            rbFilaUnica.setDisable(true);
+            rbMultiple.setDisable(true);
+            btnIniciar.setDisable(true);
+            btnPausar.setDisable(false);
+            btnDetener.setDisable(false);
+
+            pausado = false;
+            progreso.setProgress(0.0);
+
+            timer = new Timer(true);
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    if (!pausado) {
+                        avanzarSimulacion();
+                    }
+                }
+            }, 0, velocidadActual);
+
+        } catch (Exception e) {
+            System.err.println("ERROR al iniciar simulación: " + e.getMessage());
+            e.printStackTrace();
+
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Error al iniciar simulación");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
     }
 
     private void crearCajasGraficas() {
-        cajasGraficas = new ArrayList<>();
-        ArrayList<Caja> cajas = simulacion.getCajas();
+        try {
+            cajasGraficas = new ArrayList<>();
+            ArrayList<Caja> cajas = simulacion.getCajas();
 
-        // Posiciones de las cajas en pantalla (2 columnas, 6 filas)
-        int inicioCajasX = 157;
-        int inicioCajasY = 205;
-        int espacioEntreCajasX = 300;
-        int espacioEntreCajasY = 45;
-        int desplazamientoX = -40;
+            int inicioCajasX = 157;
+            int inicioCajasY = 205;
+            int espacioEntreCajasX = 300;
+            int espacioEntreCajasY = 45;
+            int desplazamientoX = -40;
 
-        int indiceCaja = 0;
+            int indiceCaja = 0;
 
-        for (int fila = 0; fila < 6; fila++) {
-            for (int columna = 0; columna < 2; columna++) {
-                if (indiceCaja >= cajas.size()) break;
+            for (int fila = 0; fila < 6; fila++) {
+                for (int columna = 0; columna < 2; columna++) {
+                    if (indiceCaja >= cajas.size()) break;
 
-                int posX = inicioCajasX + (columna * espacioEntreCajasX) + (fila * desplazamientoX);
-                int posY = inicioCajasY + (fila * espacioEntreCajasY);
+                    int posX = inicioCajasX + (columna * espacioEntreCajasX) + (fila * desplazamientoX);
+                    int posY = inicioCajasY + (fila * espacioEntreCajasY);
 
-                CajaGrafica cajaGrafica = new CajaGrafica(cajas.get(indiceCaja),posX,posY);
-                //cajaGrafica.setLayoutX(posX);
-                //cajaGrafica.setLayoutY(posY);
+                    CajaGrafica cajaGrafica = new CajaGrafica(cajas.get(indiceCaja), posX, posY);
+                    cajasGraficas.add(cajaGrafica);
+                    panelAnimaciones.getChildren().add(cajaGrafica);
+                    cajaGrafica.actualizar();
 
-                cajasGraficas.add(cajaGrafica);
-                panelAnimaciones.getChildren().add(cajaGrafica);
-
-                indiceCaja++;
+                    indiceCaja++;
+                }
             }
+
+        } catch (Exception e) {
+            System.err.println("ERROR en crearCajasGraficas(): " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
     }
-
     private void avanzarSimulacion() {
         if (simulacion.haTerminado()) {
             Platform.runLater(() -> {
@@ -171,10 +198,8 @@ public class HelloController {
             return;
         }
 
-        // Avanzar un minuto en la simulación
         simulacion.avanzarTiempo();
 
-        // Actualizar interfaz en el hilo de JavaFX
         Platform.runLater(() -> actualizarInterfaz());
     }
 
@@ -225,29 +250,25 @@ public class HelloController {
         }
     }
 
+
     private void actualizarInterfaz() {
-        // Actualizar tiempo y progreso
+
         int tiempo = simulacion.getTiempoActual();
         lblTiempo.setText(String.format("Tiempo: %d/600 min (%.1f%%)",
                 tiempo, (tiempo * 100.0 / 600)));
         progreso.setProgress(tiempo / 600.0);
 
-        // LIMPIAR todos los clientes gráficos
-        limpiarClientes();
 
-        // Recrear clientes según el tipo de simulación
         if (simulacion instanceof SimulacionFilaUnica) {
             actualizarClientesFilaUnica();
         } else {
             actualizarClientesFilasMultiples();
         }
 
-        // Actualizar cajas gráficas
         for (CajaGrafica cajaGrafica : cajasGraficas) {
             cajaGrafica.actualizar();
         }
 
-        // Actualizar estadísticas
         Estadistica stats = simulacion.getEstadisticas();
         lblClientesAtendidos.setText(String.format("Clientes: %d",
                 stats.getTotalClientesAtendidos()));
@@ -258,109 +279,162 @@ public class HelloController {
         lblCajasAbiertas.setText(String.format("Cajas: %d/12", cajasAbiertas));
     }
 
-    private void limpiarClientes() {
-        // Remover todos los clientes gráficos del panel
-        for (ClienteGrafico clienteGrafico : clientesGraficos) {
-            panelAnimaciones.getChildren().remove(clienteGrafico);
-        }
-        clientesGraficos.clear();
-    }
 
     private void actualizarClientesFilaUnica() {
         SimulacionFilaUnica simFilaUnica = (SimulacionFilaUnica) simulacion;
+        Set<Cliente> clientesActuales = new HashSet<>();
+
+        int posicionEnFila = 0;
+
+
         Cola<Cliente> colaGlobal = simFilaUnica.getFilaGeneral();
+        Cliente[] clientesEnFilaGlobal = getElementosCola(colaGlobal);
 
-        System.out.println("DEBUG: Tamaño de cola global: " + colaGlobal.tamanio());
+        for (int i = 0; i < clientesEnFilaGlobal.length; i++) {
+            Cliente cliente = clientesEnFilaGlobal[i];
+            clientesActuales.add(cliente);
 
-        // Obtener y dibujar clientes en la fila general
-        Cliente[] clientesEnFila = getElementosCola(colaGlobal);
+            double posX = FILA_INICIO_X + (posicionEnFila * ESPACIO_ENTRE_CLIENTES);
+            double posY = FILA_Y;
 
-        System.out.println("DEBUG: Clientes en fila: " + clientesEnFila.length);
-
-        for (int i = 0; i < clientesEnFila.length; i++) {
-            Cliente cliente = clientesEnFila[i];
-            double posX = FILA_GENERAL_X + (i * ESPACIO_ENTRE_CLIENTES);
-            double posY = FILA_GENERAL_Y;
-
-            ClienteGrafico clienteGrafico = new ClienteGrafico(cliente, posX, posY);
-
-            clientesGraficos.add(clienteGrafico);
-            panelAnimaciones.getChildren().add(clienteGrafico);
+            actualizarOCrearCliente(cliente, posX, posY);
+            posicionEnFila++;
         }
 
-        System.out.println("DEBUG: Clientes en fila general creados: " + clientesEnFila.length);
-
-        // Dibujar clientes siendo atendidos en cajas
         ArrayList<Caja> cajas = simulacion.getCajas();
         for (int i = 0; i < cajas.size() && i < cajasGraficas.size(); i++) {
             Caja caja = cajas.get(i);
             CajaGrafica cajaGrafica = cajasGraficas.get(i);
+
+            if (!caja.estaAbierta()) continue;
+
+            Cola<Cliente> colaCaja = caja.getColaClientes();
+            Cliente[] clientesEnColaCaja = getElementosCola(colaCaja);
+
+            for (int j = 0; j < clientesEnColaCaja.length; j++) {
+                Cliente cliente = clientesEnColaCaja[j];
+                clientesActuales.add(cliente);
+
+                double posX = cajaGrafica.getLayoutX() + 80 + (j * ESPACIO_ENTRE_CLIENTES);
+                double posY = cajaGrafica.getCentroY();
+
+                actualizarOCrearCliente(cliente, posX, posY);
+            }
+
             Cliente clienteAtendiendo = caja.getClienteActualPagando();
-
             if (clienteAtendiendo != null) {
-                double posX = cajaGrafica.getLayoutX() - 50;
-                double posY = cajaGrafica.getLayoutY();
+                clientesActuales.add(clienteAtendiendo);
 
-                ClienteGrafico clienteGrafico = new ClienteGrafico(clienteAtendiendo, posX, posY);
+                double posX = cajaGrafica.getCentroX() - 40;
+                double posY = cajaGrafica.getCentroY();
 
-                clientesGraficos.add(clienteGrafico);
-                panelAnimaciones.getChildren().add(clienteGrafico);
-
-                System.out.println("DEBUG: Cliente atendiendo en caja " + i);
+                actualizarOCrearCliente(clienteAtendiendo, posX, posY);
             }
         }
 
-        System.out.println("DEBUG: Total clientes gráficos creados: " + clientesGraficos.size());
-        System.out.println("DEBUG: Hijos en panelAnimaciones: " + panelAnimaciones.getChildren().size());
+        limpiarClientesTerminados(clientesActuales);
+    }
+
+    private void actualizarOCrearCliente(Cliente cliente, double posX, double posY) {
+        ClienteGrafico clienteGrafico = mapaClientesGraficos.get(cliente);
+
+        if (clienteGrafico == null) {
+
+
+            clienteGrafico = new ClienteGrafico(cliente, ENTRADA_CLIENTES_X, ENTRADA_CLIENTES_Y);
+            mapaClientesGraficos.put(cliente, clienteGrafico);
+            panelAnimaciones.getChildren().add(clienteGrafico);
+            clienteGrafico.toFront();
+            clienteGrafico.moverA(posX, posY, 0.5*velocidadActual);
+        } else {
+
+            if (Math.abs(clienteGrafico.getPosX() - posX) > 5 || Math.abs(clienteGrafico.getPosY() - posY) > 5) {
+                double duracion= 0.3*velocidadActual;
+                clienteGrafico.moverA(posX, posY, duracion);
+            }
+            clienteGrafico.toFront();
+        }
+
+        clienteGrafico.actualizarImagen();
     }
 
     private void actualizarClientesFilasMultiples() {
         ArrayList<Caja> cajas = simulacion.getCajas();
-
-        System.out.println("DEBUG: Actualizando filas múltiples");
+        Set<Cliente> clientesActuales = new HashSet<>();
 
         for (int i = 0; i < cajas.size() && i < cajasGraficas.size(); i++) {
             Caja caja = cajas.get(i);
             CajaGrafica cajaGrafica = cajasGraficas.get(i);
+
+            if (!caja.estaAbierta()) continue;
+
             Cola<Cliente> colaCaja = caja.getColaClientes();
-
-            System.out.println("DEBUG: Caja " + i + " tiene " + colaCaja.tamanio() + " clientes");
-
-            // Dibujar clientes en la cola de la caja
             Cliente[] clientesEnCola = getElementosCola(colaCaja);
+
 
             for (int j = 0; j < clientesEnCola.length; j++) {
                 Cliente cliente = clientesEnCola[j];
-                double posX = cajaGrafica.getLayoutX() - 100 - (j * 45);
-                double posY = cajaGrafica.getLayoutY();
+                clientesActuales.add(cliente);
 
-                ClienteGrafico clienteGrafico = new ClienteGrafico(cliente, posX, posY);
+                double posX = cajaGrafica.getLayoutX() + 120 + (j * ESPACIO_ENTRE_CLIENTES);
+                double posY = cajaGrafica.getCentroY();
 
-                clientesGraficos.add(clienteGrafico);
-                panelAnimaciones.getChildren().add(clienteGrafico);
+                actualizarOCrearCliente(cliente, posX, posY);
             }
 
-            // Dibujar cliente siendo atendido
             Cliente clienteAtendiendo = caja.getClienteActualPagando();
             if (clienteAtendiendo != null) {
-                double posX = cajaGrafica.getLayoutX() - 50;
-                double posY = cajaGrafica.getLayoutY();
+                clientesActuales.add(clienteAtendiendo);
 
-                ClienteGrafico clienteGrafico = new ClienteGrafico(clienteAtendiendo, posX, posY);
+                double posX = cajaGrafica.getCentroX() - 50;
+                double posY = cajaGrafica.getCentroY();
 
-                clientesGraficos.add(clienteGrafico);
-                panelAnimaciones.getChildren().add(clienteGrafico);
+                actualizarOCrearCliente(clienteAtendiendo, posX, posY);
             }
         }
 
-        System.out.println("DEBUG: Total clientes gráficos creados: " + clientesGraficos.size());
+        limpiarClientesTerminados(clientesActuales);
     }
-    public Cliente[] getElementosCola( Cola<Cliente> cola ) {
-        Cola<Cliente> copia= new Cola<>(cola);
-        Cliente[] arreglo= new Cliente[cola.tamanio()];
-        for (int i = 0; i < cola.tamanio(); i++) {
-            arreglo[i]=copia.eliminar();
+
+    private void limpiarClientesTerminados(Set<Cliente> clientesActuales) {
+
+        List<Cliente> clientesAEliminar = new ArrayList<>();
+
+        for (Map.Entry<Cliente, ClienteGrafico> entry : mapaClientesGraficos.entrySet()) {
+            if (!clientesActuales.contains(entry.getKey())) {
+                clientesAEliminar.add(entry.getKey());
+            }
         }
+
+
+        for (Cliente cliente : clientesAEliminar) {
+            ClienteGrafico clienteGrafico = mapaClientesGraficos.remove(cliente);
+            if (clienteGrafico != null) {
+                panelAnimaciones.getChildren().remove(clienteGrafico);
+            }
+        }
+    }
+
+    public Cliente[] getElementosCola(Cola<Cliente> cola) {
+
+        int size = cola.tamanio();
+        if (size == 0) {
+            return new Cliente[0];
+        }
+
+        Cliente[] arreglo = new Cliente[size];
+        Cola<Cliente> temporal = new Cola<>(100);
+
+        for (int i = 0; i < size; i++) {
+            Cliente cliente = cola.eliminar();
+            arreglo[i] = cliente;
+            temporal.insertar(cliente);
+        }
+
+        for (int i = 0; i < size; i++) {
+            cola.insertar(temporal.eliminar());
+        }
+
         return arreglo;
     }
     private void mostrarResultadosFinales() {

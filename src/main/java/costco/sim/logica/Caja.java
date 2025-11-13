@@ -1,9 +1,10 @@
 package costco.sim.logica;
+
 import java.util.Random;
 
 /**
- * Representa una caja registradora en Costco.
- * Gestiona su propia cola de clientes y procesa pagos.
+ * Representa una caja registradora en Costco
+ * Gestiona su propia cola de clientes y procesa pagos
  */
 public class Caja {
 
@@ -15,10 +16,11 @@ public class Caja {
     private boolean abierta;
     private Cola<Cliente> colaClientes;
     private Cliente clienteActualPagando;
+
+
     private int clientesAtendidos;
     private int tiempoAbiertaAcumulado;
     private int tiempoApertura;
-    private int tiempoCierre;
 
 
     public Caja(int numeroCaja) {
@@ -29,34 +31,23 @@ public class Caja {
         this.clientesAtendidos = 0;
         this.tiempoAbiertaAcumulado = 0;
         this.tiempoApertura = 0;
-        this.tiempoCierre = 0;
     }
 
-    public void abrir() {
-        this.abierta = true;
-    }
 
-    /**
-     * Abre la caja registrando el tiempo de apertura
-     */
     public void abrir(int tiempoActual) {
         this.abierta = true;
         this.tiempoApertura = tiempoActual;
     }
 
 
-    public void cerrar() {
-        this.abierta = false;
-    }
-
     public boolean cerrar(int tiempoActual) {
         if (!estaVacia()) {
-            return false; // No se puede cerrar con clientes
+            return false;
         }
-        this.abierta = false;
-        this.tiempoCierre = tiempoActual;
 
-        // Acumular el tiempo que estuvo abierta
+        this.abierta = false;
+
+        // Acumular tiempo que estuvo abierta
         if (tiempoApertura > 0) {
             this.tiempoAbiertaAcumulado += (tiempoActual - tiempoApertura);
         }
@@ -64,42 +55,40 @@ public class Caja {
         return true;
     }
 
-
-    public boolean agregarCliente(Cliente cliente) {
-        boolean agregado = colaClientes.insertar(cliente);
-        if (agregado) {
+    public void agregarCliente(Cliente cliente) {
+        if (colaClientes.insertar(cliente)) {
             cliente.asignarACaja(this.numeroCaja);
         }
-        return agregado;
     }
 
     public Cliente procesarPago(int tiempoActual, Random random) {
-        Cliente clienteTerminado = null;
 
-        // Si hay un cliente pagando, verificar si ya terminó
         if (clienteActualPagando != null) {
             if (clienteActualPagando.haTerminadoDePagar(tiempoActual)) {
                 clienteActualPagando.terminarPago(tiempoActual);
                 clientesAtendidos++;
 
-                clienteTerminado = clienteActualPagando;  // ✅ Guardar antes de limpiar
-                clienteActualPagando = null;  // Liberar la caja
+                Cliente clienteTerminado = clienteActualPagando;
+                clienteActualPagando = null;
+
+                return clienteTerminado;
             }
+            return null; // Aún está pagando
         }
 
-        // Si la caja está libre y hay clientes esperando, atender al siguiente
-        if (clienteActualPagando == null && !colaClientes.estaVacia()) {
+        if (!colaClientes.estaVacia()) {
             clienteActualPagando = colaClientes.eliminar();
-            double duracionPago = generarTiempoPago(random);
-            clienteActualPagando.iniciarPago(tiempoActual, duracionPago);
+            double tiempoPago = generarTiempoPago(random);
+            clienteActualPagando.iniciarPago(tiempoActual, tiempoPago);
         }
 
-        return clienteTerminado;  // ✅ Retornar cliente terminado
+        return null;
     }
 
     private double generarTiempoPago(Random random) {
         return TIEMPO_PAGO_MIN + (random.nextDouble() * (TIEMPO_PAGO_MAX - TIEMPO_PAGO_MIN));
     }
+
 
     public boolean estaVacia() {
         return colaClientes.estaVacia() && clienteActualPagando == null;
@@ -113,7 +102,6 @@ public class Caja {
         return total;
     }
 
-
     public int cantidadClientesEsperando() {
         return colaClientes.tamanio();
     }
@@ -122,18 +110,8 @@ public class Caja {
         return clienteActualPagando != null;
     }
 
-
     public boolean colaLlena() {
         return colaClientes.estaLlena();
-    }
-
-
-    public double getTiempoRestantePago(int tiempoActual) {
-        if (clienteActualPagando == null) {
-            return 0;
-        }
-        double tiempoRestante = clienteActualPagando.getTiempoFinPago() - tiempoActual;
-        return Math.max(0, tiempoRestante);
     }
 
     public int calcularTiempoTotalAbierta(int tiempoActual) {
@@ -143,21 +121,6 @@ public class Caja {
         return tiempoAbiertaAcumulado;
     }
 
-    public Cliente getSiguienteCliente() {
-        return colaClientes.peek();
-    }
-
-    public Cliente[] getClientesEsperando() {
-        return colaClientes.getElementosCola();
-    }
-
-    /**
-     * Obtiene un cliente específico de la cola sin eliminarlo
-     */
-    public Cliente getClienteEnPosicion(int posicion) {
-        return colaClientes.obtenerEnPosicion(posicion);
-    }
-
     public String getEstadoVisual() {
         if (!abierta) {
             return "CERRADA";
@@ -165,24 +128,18 @@ public class Caja {
 
         StringBuilder sb = new StringBuilder();
 
-        // Mostrar cliente pagando
-        if (clienteActualPagando != null) {
-            sb.append("[pagando]");
-        } else {
-            sb.append("[ ]");
-        }
 
-        // Mostrar clientes esperando
+        sb.append(clienteActualPagando != null ? "[$]" : "[ ]");
+
+
         if (!colaClientes.estaVacia()) {
             sb.append(" → ");
             int cantidad = colaClientes.tamanio();
 
-            // Mostrar hasta 5 clientes con íconos
             for (int i = 0; i < Math.min(cantidad, 5); i++) {
-                sb.append("[cliente]");
+                sb.append("👤");
             }
 
-            // Si hay más de 5, mostrar contador
             if (cantidad > 5) {
                 sb.append("...(+").append(cantidad - 5).append(")");
             }
@@ -191,6 +148,7 @@ public class Caja {
         return sb.toString();
     }
 
+    // ========== GETTERS ==========
 
     public int getNumeroCaja() {
         return numeroCaja;
@@ -216,16 +174,13 @@ public class Caja {
         return colaClientes;
     }
 
+
     @Override
     public String toString() {
-        return String.format("Caja #%d [%s, Clientes: %d (esperando: %d), Atendidos: %d, Tiempo abierta: %d min]",
+        return String.format("Caja #%d [%s, Clientes: %d, Atendidos: %d]",
                 numeroCaja,
                 abierta ? "ABIERTA" : "CERRADA",
                 cantidadClientes(),
-                cantidadClientesEsperando(),
-                clientesAtendidos,
-                tiempoAbiertaAcumulado);
+                clientesAtendidos);
     }
-
-
 }

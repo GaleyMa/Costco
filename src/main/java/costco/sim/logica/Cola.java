@@ -1,5 +1,9 @@
 package costco.sim.logica;
 
+/**
+ * Estructura de datos FIFO (First In, First Out) genérica
+ * Optimizada para simulación de filas en Costco
+ */
 public class Cola<T> {
     private T[] cola;
     private int inicio;
@@ -7,16 +11,7 @@ public class Cola<T> {
     private int MAX;
 
     public Cola() {
-        this.MAX = 10;
-        this.inicio = -1;
-        this.fin = -1;
-        this.cola = (T[]) new Object[MAX];
-    }
-    public Cola(Cola a){
-        this.cola = (T[]) a.cola;
-        this.inicio=a.inicio;
-        this.fin=a.fin;
-        this.MAX=a.MAX;
+        this(10); // Delegar al constructor con parámetro
     }
 
     public Cola(int max) {
@@ -26,63 +21,86 @@ public class Cola<T> {
         this.cola = (T[]) new Object[MAX];
     }
 
-    public boolean insertar(T elemento) {
-        boolean done = false;
-        if (fin < MAX - 1) {
-            fin++;
-            cola[fin] = elemento;
-            done = true;
-            if (fin == 0) {
-                inicio = 0;
+    public Cola(Cola<T> original) {
+        this.MAX = original.MAX;
+        this.cola = (T[]) new Object[MAX];
+        this.inicio = -1;
+        this.fin = -1;
+
+        if (!original.estaVacia()) {
+            for (int i = original.inicio; i <= original.fin; i++) {
+                this.insertar(original.cola[i]);
             }
         }
-        return done;
     }
 
-    public T eliminar() {
-        T dato = null;
-        if (inicio != -1) {
-            dato = cola[inicio];
-            if (inicio == fin) {
-                inicio = -1;
-                fin = -1;
-            } else {
-                inicio++;
-            }
+    public boolean insertar(T elemento) {
+        if (fin >= MAX - 1) {
+            return false;
         }
+
+        fin++;
+        cola[fin] = elemento;
+
+        if (inicio == -1) {
+            inicio = 0;
+        }
+
+        return true;
+    }
+
+
+    public T eliminar() {
+        if (inicio == -1) {
+            return null;
+        }
+
+        T dato = cola[inicio];
+        cola[inicio] = null; // Liberar referencia para GC
+
+        if (inicio == fin) {
+            // Cola quedó vacía
+            inicio = -1;
+            fin = -1;
+        } else {
+            inicio++;
+        }
+
         return dato;
     }
 
+
     public T peek() {
-        if (inicio != -1) {
-            return cola[inicio];
-        }
-        return null;
+        return (inicio != -1) ? cola[inicio] : null;
     }
+
 
     public boolean estaVacia() {
         return inicio == -1;
     }
-    public T[] getElementosCola( ) {
-        Cola<T> copia= new Cola<>();
-        T[] arreglo= (T[]) new Object[tamanio()];
-        for (int i = 0; i < tamanio(); i++) {
-            arreglo[i]=copia.eliminar();
-        }
-        return arreglo;
-    }
+
     public boolean estaLlena() {
         return fin == MAX - 1;
     }
 
     public int tamanio() {
-        if (inicio == -1) {
-            return 0;
-        }
-        return fin - inicio + 1;
+        return (inicio == -1) ? 0 : (fin - inicio + 1);
     }
 
-    public T obtenerEnPosicion(int posicion) {
-        return cola[posicion];
+
+    @Override
+    public String toString() {
+        if (estaVacia()) {
+            return "Cola vacía";
+        }
+
+        StringBuilder sb = new StringBuilder("Cola [");
+        for (int i = inicio; i <= fin; i++) {
+            sb.append(cola[i]);
+            if (i < fin) sb.append(", ");
+        }
+        sb.append("]");
+
+        return sb.toString();
     }
 }

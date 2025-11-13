@@ -1,111 +1,107 @@
 package costco.sim.grafica;
+
 import costco.sim.logica.Cliente;
 import costco.sim.logica.Estado;
 import javafx.animation.TranslateTransition;
+import javafx.application.Platform;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.util.Duration;
 
 import java.util.Objects;
 import java.util.Random;
-
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClienteGrafico extends ImageView {
 
-    private Cliente cliente;
-    private static Image imagenEsperando;
-    private static Image imagenPagando;
+    private final Cliente cliente;
+    private Image imagenEsperando;
+    private Image imagenPagando;
+
+    private TranslateTransition transicionActiva;
 
 
+    private static final ConcurrentHashMap<String, Image> cacheImagenes = new ConcurrentHashMap<>();
 
-    public ClienteGrafico(Cliente cliente, double x, double y) {
+    public ClienteGrafico(Cliente cliente, double entradaX, double entradaY) {
         super();
         this.cliente = cliente;
+        asignarImagenesCliente();
 
-        asignacionDeCliente();
-        this.setFitWidth(40);
-        this.setFitHeight(50);
-        this.setPreserveRatio(true);
-
-        this.setX(x);
-        this.setY(y);
+        setFitWidth(40);
+        setFitHeight(50);
+        setPreserveRatio(true);
+        setLayoutX(entradaX);
+        setLayoutY(entradaY);
 
         actualizarImagen();
     }
 
-    public ClienteGrafico(Cliente clienteAtendiendo) {
-        this.cliente = clienteAtendiendo;
-        asignacionDeCliente();
-        asignacionDeCliente();
-        this.setFitWidth(40);
-        this.setFitHeight(50);
-        this.setPreserveRatio(true);
-    }
-
 
     public void actualizarImagen() {
-        if (cliente.getEstado() == Estado.PAGANDO) {
-            this.setImage(imagenPagando);
-        } else {
-            this.setImage(imagenEsperando);
+        Image nueva = (cliente.getEstado() == Estado.PAGANDO)
+                ? imagenPagando
+                : imagenEsperando;
+
+        if (getImage() != nueva) {
+            Platform.runLater(() -> setImage(nueva));
         }
     }
 
-    /**
-     * Mueve el cliente a una posición con animación
-     * @param destinoX Posición X de destino
-     * @param destinoY Posición Y de destino
-     * @param duracion Duración de la animación en milisegundos
-     */
-    public void moverA(double destinoX, double destinoY, double duracion) {
-        TranslateTransition transicion = new TranslateTransition(
-                Duration.millis(duracion),
-                this
-        );
+    public void moverA(double destinoX, double destinoY, double duracionMs) {
+        // Detiene cualquier animación previa
+        if (transicionActiva != null) {
+            transicionActiva.stop();
+        }
 
-        // Calcular desplazamiento desde posición actual
-        transicion.setToX(destinoX - this.getX());
-        transicion.setToY(destinoY - this.getY());
+        double deltaX = destinoX - getLayoutX();
+        double deltaY = destinoY - getLayoutY();
 
-        transicion.setOnFinished(e -> {
-            // Actualizar posición real después de la animación
-            this.setX(destinoX);
-            this.setY(destinoY);
-            this.setTranslateX(0);
-            this.setTranslateY(0);
+        transicionActiva = new TranslateTransition(Duration.millis(duracionMs), this);
+        transicionActiva.setToX(deltaX);
+        transicionActiva.setToY(deltaY);
+
+        transicionActiva.setOnFinished(e -> {
+            setLayoutX(destinoX);
+            setLayoutY(destinoY);
+            setTranslateX(0);
+            setTranslateY(0);
+            transicionActiva = null;
         });
 
-        transicion.play();
+        transicionActiva.play();
     }
-    private void asignacionDeCliente(){
-        Random rand = new Random();
-        int numero = rand.nextInt(1,4);
 
-        switch (numero){
-            case 1:
-                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente1.png")));
-                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente1_pagando.png")));
-                break;
-            case 2:
-                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente2.png")));
-                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente2_pagando.png")));
-                break;
-            case 3:
-                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente3.png")));
-                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente3_pagando.png")));
-                break;
-            case 4:
-                imagenEsperando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente4.png")));
-                imagenPagando = new Image(Objects.requireNonNull(ClienteGrafico.class.getResourceAsStream("/imagenes/cliente4_pagando.png")));
-                break;
-            default:
-                imagenEsperando = null;
-                imagenPagando = null;
-                System.out.println("Error al cargar imagen de cliente");
-        }
+
+
+    private void asignarImagenesCliente() {
+        int numero = new Random().nextInt(1, 5);
+        imagenEsperando = cargarImagen("/imagenes/cliente" + numero + ".png");
+        imagenPagando   = cargarImagen("/imagenes/cliente" + numero + "_pagando.png");
     }
+
+    private Image cargarImagen(String ruta) {
+        return cacheImagenes.computeIfAbsent(ruta, r -> {
+            try {
+                return new Image(Objects.requireNonNull(
+                        ClienteGrafico.class.getResourceAsStream(r)
+                ));
+            } catch (Exception e) {
+                return null;
+            }
+        });
+    }
+
 
     public Cliente getCliente() {
         return cliente;
+    }
+
+    public double getPosX() {
+        return getLayoutX();
+    }
+
+    public double getPosY() {
+        return getLayoutY();
     }
 }

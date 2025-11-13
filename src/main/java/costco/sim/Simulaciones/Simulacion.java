@@ -7,6 +7,10 @@ import costco.sim.logica.Estadistica;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * Clase abstracta base para las simulaciones de Costco
+ * Define el comportamiento común de ambas estrategias
+ */
 public abstract class Simulacion {
 
     private static final double TIEMPO_LLEGADA_MIN = 0.5;
@@ -14,7 +18,7 @@ public abstract class Simulacion {
     protected static final int TIEMPO_SIMULACION = 600;  // 10 horas en minutos
     protected static final int NUM_CAJAS = 12;
     protected static final int UMBRAL_ABRIR_CAJA = 4;    // Clientes para abrir caja
-    protected static final int UMBRAL_CERRAR_CAJA = 3;   // Clientes para considerar cerrar
+    protected static final int UMBRAL_CERRAR_CAJA = 3;   // Clientes para cerrar caja
 
     protected Random random;
     protected int tiempoActual;
@@ -40,7 +44,6 @@ public abstract class Simulacion {
         for (int i = 1; i <= NUM_CAJAS; i++) {
             cajas.add(new Caja(i));
         }
-
 
         this.tiempoProximaLlegada = generarTiempoLlegada();
     }
@@ -70,93 +73,33 @@ public abstract class Simulacion {
         this.tiempoProximaLlegada = generarTiempoLlegada();
     }
 
-
+    /**
+     * avanza un minuto
+     */
     public void avanzarTiempo() {
-         if(!enEjecucion || terminada) {
+        if (!enEjecucion || terminada) {
             return;
         }
 
         tiempoActual++;
 
-        // ✅ SOLUCIÓN: Solo generar clientes ANTES de los 600 minutos
+        procesarPagosEnCajas();
+
+        gestionarCajas();
+
+
         if (tiempoActual < TIEMPO_SIMULACION && tiempoActual >= tiempoProximaLlegada) {
             Cliente nuevoCliente = generarNuevoCliente();
             procesarLlegadaCliente(nuevoCliente);
             tiempoProximaLlegada = tiempoActual + generarTiempoLlegada();
         }
 
-        procesarPagosEnCajas();
-        gestionarCajas();
-
-        // Verificar si terminó
         if (tiempoActual >= TIEMPO_SIMULACION && todasCajasVacias()) {
             terminada = true;
             enEjecucion = false;
         }
     }
 
-    public int getTiempoActual() {
-        return tiempoActual;
-    }
-
-    public int getClientesAtendidosActual() {
-        return estadisticas.getTotalClientesAtendidos();
-    }
-
-
-    public int getClientesEsperandoTotal() {
-        int total = 0;
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
-            if (caja.estaAbierta()) {
-                total += caja.cantidadClientes();
-            }
-        }
-        return total;
-    }
-
-    public int getCajasAbiertas() {
-        int abiertas = 0;
-        for (int i = 0; i < cajas.size(); i++) {
-            if (cajas.get(i).estaAbierta()) {
-                abiertas++;
-            }
-        }
-        return abiertas;
-    }
-
-    public Caja getCaja(int numeroCaja) {
-        if (numeroCaja >= 1 && numeroCaja <= cajas.size()) {
-            return cajas.get(numeroCaja - 1);
-        }
-        return null;
-    }
-
-
-    public ArrayList<Caja> getCajas() {
-        return cajas;
-    }
-
-    public Caja[] getCajasArray() {
-        Caja[] array = new Caja[cajas.size()];
-        for (int i = 0; i < cajas.size(); i++) {
-            array[i] = cajas.get(i);
-        }
-        return array;
-    }
-
-
-    public Estadistica getEstadisticas() {
-        return estadisticas;
-    }
-
-    public boolean estaEnEjecucion() {
-        return enEjecucion;
-    }
-
-    public boolean haTerminado() {
-        return terminada;
-    }
 
     protected Cliente generarNuevoCliente() {
         Cliente cliente = new Cliente(contadorClientes);
@@ -171,10 +114,8 @@ public abstract class Simulacion {
     }
 
     protected void procesarPagosEnCajas() {
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
+        for (Caja caja : cajas) {
             if (caja.estaAbierta()) {
-                // ✅ SOLUCIÓN: procesarPago() ahora retorna el cliente terminado
                 Cliente clienteTerminado = caja.procesarPago(tiempoActual, random);
 
                 if (clienteTerminado != null) {
@@ -185,42 +126,41 @@ public abstract class Simulacion {
     }
 
     protected boolean todasCajasVacias() {
-        for (int i = 0; i < cajas.size(); i++) {
-            if (!cajas.get(i).estaVacia()) {
+        for (Caja caja : cajas) {
+            if (!caja.estaVacia()) {
                 return false;
             }
         }
         return true;
     }
 
+
     protected boolean abrirSiguienteCaja() {
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
+        for (Caja caja : cajas) {
             if (!caja.estaAbierta()) {
                 caja.abrir(tiempoActual);
                 return true;
             }
         }
-        return false;  // No hay cajas disponibles para abrir
-    }
-
-    protected boolean cerrarCajaVacia() {
-        // Buscar cajas vacías (de atrás hacia adelante para cerrar las últimas primero)
-        for (int i = cajas.size() - 1; i >= 0; i--) {
-            Caja caja = cajas.get(i);
-            if (caja.estaAbierta() && caja.estaVacia()) {
-                // Solo cerrar si hay más de 2 cajas abiertas
-                if (getCajasAbiertas() > 2) {
-                    caja.cerrar(tiempoActual);
-                    return true;
-                }
-            }
-        }
         return false;
     }
 
+    protected void cerrarCajaVacia() {
+        // Cerrar de atrás hacia adelante
+        for (int i = cajas.size() - 1; i >= 0; i--) {
+            Caja caja = cajas.get(i);
+            if (caja.estaAbierta() && caja.cantidadClientes()==0) {
+                // Solo cerrar si hay más de 2 cajas abiertas
+                if (getCajasAbiertas() > 2) {
+                    caja.cerrar(tiempoActual);
+                    return;
+                }
+            }
+        }
+    }
+
     protected int encontrarCajaMenosOcupada() {
-        int indiceMejorCaja = -1;
+        int indiceMejor = -1;
         int menorCantidad = Integer.MAX_VALUE;
 
         for (int i = 0; i < cajas.size(); i++) {
@@ -229,34 +169,97 @@ public abstract class Simulacion {
                 int cantidad = caja.cantidadClientes();
                 if (cantidad < menorCantidad) {
                     menorCantidad = cantidad;
-                    indiceMejorCaja = i;
+                    indiceMejor = i;
                 }
             }
         }
 
-        return indiceMejorCaja;
+        return indiceMejor;
+    }
+
+
+    public void evaluarCierreCaja() {
+        int cajasAbiertas = getCajasAbiertas();
+
+        if (cajasAbiertas <= 2) {
+            return;
+        }
+
+        int totalClientes = getClientesEsperandoTotal();
+        double promedio = (double) totalClientes / cajasAbiertas;
+
+        if (promedio <= UMBRAL_CERRAR_CAJA) {
+            cerrarCajaVacia();
+        }
+    }
+
+    public int getTiempoActual() {
+        return tiempoActual;
+    }
+
+    public int getClientesAtendidosActual() {
+        return estadisticas.getTotalClientesAtendidos();
+    }
+
+    public int getClientesEsperandoTotal() {
+        int total = 0;
+        for (Caja caja : cajas) {
+            if (caja.estaAbierta()) {
+                total += caja.cantidadClientes();
+            }
+        }
+        return total;
+    }
+
+    public int getCajasAbiertas() {
+        int abiertas = 0;
+        for (Caja caja : cajas) {
+            if (caja.estaAbierta()) {
+                abiertas++;
+            }
+        }
+        return abiertas;
+    }
+
+    public Caja getCaja(int numeroCaja) {
+        if (numeroCaja >= 1 && numeroCaja <= cajas.size()) {
+            return cajas.get(numeroCaja - 1);
+        }
+        return null;
+    }
+
+    public ArrayList<Caja> getCajas() {
+        return cajas;
+    }
+
+    public Estadistica getEstadisticas() {
+        return estadisticas;
+    }
+
+    public boolean estaEnEjecucion() {
+        return enEjecucion;
+    }
+
+    public boolean haTerminado() {
+        return terminada;
     }
 
     protected abstract void procesarLlegadaCliente(Cliente cliente);
 
     protected abstract void gestionarCajas();
 
-    public String formatearTiempo(int minutos) {
-        return null;
-    }
+    public abstract String getEstadoVisual();
+
+    public abstract boolean esFilaUnica();
 
     @Override
     public String toString() {
-        return String.format("%s[tiempo=%s, clientes=%d, cajas=%d/%d, estado=%s]",
+        return String.format("%s[tiempo=%d min, clientes=%d, cajas=%d/%d, estado=%s]",
                 getClass().getSimpleName(),
-                formatearTiempo(tiempoActual),
+                tiempoActual,
                 getClientesAtendidosActual(),
                 getCajasAbiertas(),
                 NUM_CAJAS,
                 terminada ? "TERMINADA" : (enEjecucion ? "EJECUTANDO" : "PAUSADA"));
     }
-
-    public abstract String getEstadoVisual();
-
-    public abstract boolean esFilaUnica();
 }

@@ -1,49 +1,47 @@
 package costco.sim.Simulaciones;
+
 import costco.sim.logica.Caja;
 import costco.sim.logica.Cliente;
 import costco.sim.logica.Cola;
 
+/**
+ * Simulación con estrategia de FILA ÚNICA
+ * Todos los clientes esperan en una fila general
+ * Se asignan a cajas disponibles cuando hay espacio
+ */
 public class SimulacionFilaUnica extends Simulacion {
 
-    private static final int MAX_CLIENTES_POR_CAJA = 4;
+    private static final int MAX_CLIENTES_POR_CAJA = 3;
     private static final int CAPACIDAD_FILA_GENERAL = 100;
-    private static final int CAJAS_INICIALES = 2;  // Empezar con 2 cajas
+    private static final int CAJAS_INICIALES = 2;
+
 
     private Cola<Cliente> filaGeneral;
+
 
     public SimulacionFilaUnica() {
         super();
         this.filaGeneral = new Cola<>(CAPACIDAD_FILA_GENERAL);
-        for (int i = 0; i < CAJAS_INICIALES && i < cajas.size(); i++) {
-            cajas.get(i).abrir(0);
-        }
-    }
-    public int getClientesEnFilaGeneral() {
-        return filaGeneral.tamanio();
-    }
-    public Cliente[] getClientesFilaGeneralArray() {
-        Cola<Cliente> copia= new Cola<>(filaGeneral);
-        Cliente[] arreglo= new Cliente[getClientesEnFilaGeneral()];
-        for (int i = 0; i < getClientesEnFilaGeneral(); i++) {
-            arreglo[i]=copia.eliminar();
-        }
-        return arreglo;
-    }
-    public Cola<Cliente> getFilaGeneral() {
-        return filaGeneral;
-    }
-    @Override
-    public void reiniciar() {
-        super.reiniciar();
-        this.filaGeneral = new Cola<>(CAPACIDAD_FILA_GENERAL);
+
+
         for (int i = 0; i < CAJAS_INICIALES && i < cajas.size(); i++) {
             cajas.get(i).abrir(0);
         }
     }
 
     @Override
+    public void reiniciar() {
+        super.reiniciar();
+        this.filaGeneral = new Cola<>(CAPACIDAD_FILA_GENERAL);
+
+        for (int i = 0; i < CAJAS_INICIALES && i < cajas.size(); i++) {
+            cajas.get(i).abrir(0);
+        }
+    }
+
+
+    @Override
     protected void procesarLlegadaCliente(Cliente cliente) {
-        // Agregar a la fila general
         if (!filaGeneral.estaLlena()) {
             cliente.entrarFilaGeneral();
             filaGeneral.insertar(cliente);
@@ -52,62 +50,54 @@ public class SimulacionFilaUnica extends Simulacion {
 
     @Override
     protected void gestionarCajas() {
-        asignarClientesACajas();
         evaluarAperturaCaja();
+
+        asignarClientesACajas();
+
         evaluarCierreCaja();
     }
-
-    private void asignarClientesACajas() {
-        while (!filaGeneral.estaVacia()) {
-            int indiceCaja = encontrarCajaConEspacio();
-
-            if (indiceCaja == -1) {
-                break;
-            }
-            Cliente cliente = filaGeneral.eliminar();
-            Caja caja = cajas.get(indiceCaja);
-            caja.agregarCliente(cliente);
-        }
-    }
-
-    private int encontrarCajaConEspacio() {
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
-            if (caja.estaAbierta() && caja.cantidadClientes() < MAX_CLIENTES_POR_CAJA) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     private void evaluarAperturaCaja() {
         int totalClientes = filaGeneral.tamanio() + getClientesEsperandoTotal();
 
-        if (totalClientes >= UMBRAL_ABRIR_CAJA) {
-            boolean hayCajaLlena = false;
-            for (int i = 0; i < cajas.size(); i++) {
-                if (cajas.get(i).estaAbierta() &&
-                        cajas.get(i).cantidadClientes() >= MAX_CLIENTES_POR_CAJA) {
-                    hayCajaLlena = true;
+        System.out.println("DEBUG: Total clientes: " + totalClientes +
+                ", Cajas abiertas: " + getCajasAbiertas());
+
+        // Abrir cajas progresivamente según la carga
+        if (totalClientes >= 8 && getCajasAbiertas() < 4) {
+            abrirSiguienteCaja();
+        } else if (totalClientes >= 16 && getCajasAbiertas() < 6) {
+            abrirSiguienteCaja();
+        } else if (totalClientes >= 24 && getCajasAbiertas() < 8) {
+            abrirSiguienteCaja();
+        } else if (totalClientes >= 32 && getCajasAbiertas() < 10) {
+            abrirSiguienteCaja();
+        } else if (totalClientes >= 40 && getCajasAbiertas() < 12) {
+            abrirSiguienteCaja();
+        }
+
+        // También abrir si alguna caja está llena y hay fila general
+        if (filaGeneral.tamanio() > 0) {
+            for (Caja caja : cajas) {
+                if (caja.estaAbierta() && caja.cantidadClientes() >= MAX_CLIENTES_POR_CAJA) {
+                    if (abrirSiguienteCaja()) {
+                        System.out.println("DEBUG: Caja abierta porque caja " + caja.getNumeroCaja() + " está llena");
+                    }
                     break;
                 }
             }
-            if (hayCajaLlena || filaGeneral.tamanio() > 3) {
-                abrirSiguienteCaja();
+        }
+    }
+
+
+    private void asignarClientesACajas() {
+        for (Caja caja : cajas) {
+            // Mientras la caja tenga espacio Y haya clientes en fila general
+            while (caja.estaAbierta() &&  caja.cantidadClientes() < MAX_CLIENTES_POR_CAJA && !caja.colaLlena() && !filaGeneral.estaVacia()) {
+                Cliente cliente = filaGeneral.eliminar();
+                caja.agregarCliente(cliente);
             }
+
         }
-    }
-
-    private void evaluarCierreCaja() {
-        int totalClientes = filaGeneral.tamanio() + getClientesEsperandoTotal();
-
-        if (totalClientes <= UMBRAL_CERRAR_CAJA && getCajasAbiertas() > 2) {
-            cerrarCajaVacia();
-        }
-    }
-
-    private int getTotalClientesEnSistema() {
-        return filaGeneral.tamanio() + getClientesEsperandoTotal();
     }
 
     @Override
@@ -115,16 +105,35 @@ public class SimulacionFilaUnica extends Simulacion {
         return super.todasCajasVacias() && filaGeneral.estaVacia();
     }
 
+    public Cola<Cliente> getFilaGeneral() {
+        return filaGeneral;
+    }
+
+    public Cliente[] getClientesFilaGeneralArray() {
+        Cola<Cliente> copia = new Cola<>(filaGeneral);
+        int cantidad = copia.tamanio();
+        Cliente[] arreglo = new Cliente[cantidad];
+
+        for (int i = 0; i < cantidad; i++) {
+            arreglo[i] = copia.eliminar();
+        }
+
+        return arreglo;
+    }
+
+
+    @Override
     public String getEstadoVisual() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== FILA ÚNICA ===\n");
-        sb.append(String.format("Tiempo: %s\n", formatearTiempo(tiempoActual)));
+
+        sb.append("========== FILA ÚNICA ==========\n");
+        sb.append(String.format("Tiempo: %d min (%d horas %d min)\n",
+                tiempoActual, tiempoActual / 60, tiempoActual % 60));
         sb.append(String.format("Clientes en fila general: %d\n", filaGeneral.tamanio()));
         sb.append(String.format("Cajas abiertas: %d/%d\n\n", getCajasAbiertas(), NUM_CAJAS));
 
         // Mostrar cajas abiertas
-        for (int i = 0; i < cajas.size(); i++) {
-            Caja caja = cajas.get(i);
+        for (Caja caja : cajas) {
             if (caja.estaAbierta()) {
                 sb.append(String.format("Caja %d: %s\n",
                         caja.getNumeroCaja(),
@@ -142,8 +151,8 @@ public class SimulacionFilaUnica extends Simulacion {
 
     @Override
     public String toString() {
-        return String.format("SimulacionFilaUnica[tiempo=%s, filaGeneral=%d, cajas=%d/%d, atendidos=%d]",
-                formatearTiempo(tiempoActual),
+        return String.format("SimulacionFilaUnica[tiempo=%d min, filaGeneral=%d, cajas=%d/%d, atendidos=%d]",
+                tiempoActual,
                 filaGeneral.tamanio(),
                 getCajasAbiertas(),
                 NUM_CAJAS,

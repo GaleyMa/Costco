@@ -125,21 +125,6 @@ public class Cliente {
     }
 
 
-    public String getIcono() {
-        switch (estado) {
-            case RECIEN_LLEGADO:
-            case EN_FILA_GENERAL:
-            case EN_CAJA:
-                return "[cliente]";
-            case PAGANDO:
-                return "[pagando]";
-            case FINALIZADO:
-                return "✓";
-            default:
-                return "?";
-        }
-    }
-
     @Override
     public String toString() {
         return String.format("Cliente #%d [Estado: %s, Caja: %d, Espera: %.1f min, Pago: %.1f min]",
