@@ -1,9 +1,5 @@
 package costco.sim.logica;
 
-/**
- * Estructura de datos FIFO (First In, First Out) genérica
- * Optimizada para simulación de filas en Costco
- */
 public class Cola<T> {
     private T[] cola;
     private int inicio;
