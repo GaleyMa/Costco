@@ -78,7 +78,7 @@ public class SimulacionMultiplesFilas extends Simulacion {
     public String getEstadoVisual() {
         StringBuilder sb = new StringBuilder();
 
-        sb.append("========== MÚLTIPLES FILAS ==========\n");
+        sb.append("\tMÚLTIPLES FILAS\n");
         sb.append(String.format("Tiempo: %d min (%d horas %d min)\n",
                 tiempoActual, tiempoActual / 60, tiempoActual % 60));
         sb.append(String.format("Cajas abiertas: %d/%d\n", getCajasAbiertas(), NUM_CAJAS));

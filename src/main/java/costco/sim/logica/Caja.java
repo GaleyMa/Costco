@@ -1,5 +1,4 @@
 package costco.sim.logica;
-
 import java.util.Random;
 
 /**
@@ -147,8 +146,6 @@ public class Caja {
 
         return sb.toString();
     }
-
-    // ========== GETTERS ==========
 
     public int getNumeroCaja() {
         return numeroCaja;

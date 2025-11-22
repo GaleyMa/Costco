@@ -45,21 +45,16 @@ public class CajaGrafica extends StackPane {
     public CajaGrafica(Caja caja, int x, int y) {
         super();
         this.caja = caja;
-
-        // Configurar posición
         this.setLayoutX(x);
         this.setLayoutY(y);
-
         crearComponentes();
     }
 
     private void crearComponentes() {
-        // Imagen de la caja
         imagenCaja = new ImageView();
         imagenCaja.setFitWidth(120);
         imagenCaja.setFitHeight(100);
         imagenCaja.setPreserveRatio(true);
-
         imagenCaja.setImage(imagenCerrada);
 
         // Label con número de caja (encima de la imagen)
@@ -79,8 +74,6 @@ public class CajaGrafica extends StackPane {
                 "-fx-padding: 3px; " +
                 "-fx-background-radius: 5;");
         StackPane.setAlignment(lblAtendidos, Pos.BOTTOM_CENTER);
-
-
         this.getChildren().addAll(imagenCaja, lblNumero, lblAtendidos);
     }
 

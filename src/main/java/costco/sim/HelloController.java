@@ -18,7 +18,6 @@ public class HelloController {
     @FXML private Label lblTiempo;
     @FXML private RadioButton rbFilaUnica;
     @FXML private RadioButton rbMultiple;
-    @FXML private ToggleGroup grupoMetodo;
     @FXML private Button btnIniciar;
     @FXML private Button btnPausar;
     @FXML private Button btnDetener;
@@ -30,7 +29,6 @@ public class HelloController {
     @FXML private Label lblEsperaPromedio;
     @FXML private Label lblCajasAbiertas;
 
-    // Lógica
     private Simulacion simulacion;
     private List<CajaGrafica> cajasGraficas;
     private Timer timer;
@@ -43,11 +41,9 @@ public class HelloController {
     private static final double FILA_INICIO_X = 600;
     private static final double FILA_Y = 350;
     private static final int ESPACIO_ENTRE_CLIENTES = 45;
-
-    // Reemplazo del HashMap con Colas
     private Cola<ClienteGrafico> clientesGraficosLibres;
     private Cola<ClienteGrafico> clientesGraficosEnUso;
-    private Cola<ClienteGrafico> clientesGraficosTemp; // Para búsquedas eficientes
+    private Cola<ClienteGrafico> clientesGraficosTemp;
     private final int MAX_CLIENTES_GRAFICOS = 50;
 
     @FXML
@@ -86,7 +82,6 @@ public class HelloController {
     @FXML
     private void iniciarSimulacion() {
         try {
-            System.out.println("DEBUG: Iniciando simulación...");
 
             simulacion = rbFilaUnica.isSelected() ?
                     new SimulacionFilaUnica() : new SimulacionMultiplesFilas();
@@ -192,7 +187,7 @@ public class HelloController {
     @FXML
     private void pausarReanudar() {
         pausado = !pausado;
-        btnPausar.setText(pausado ? "▶ REANUDAR" : "⏸ PAUSAR");
+        btnPausar.setText(pausado ? "REANUDAR" : "PAUSAR");
     }
 
     @FXML
@@ -327,10 +322,8 @@ public class HelloController {
         ClienteGrafico clienteGrafico = buscarClienteGraficoEnUso(cliente);
 
         if (clienteGrafico != null) {
-            // Actualizar posición existente
             actualizarPosicionCliente(clienteGrafico, posX, posY);
         } else {
-            // Asignar nuevo del pool disponible
             asignarNuevoClienteGrafico(cliente, posX, posY);
         }
     }

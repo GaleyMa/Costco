@@ -26,7 +26,6 @@ public class Estadistica {
         double tiempoEspera = cliente.getTiempoEspera();
         double tiempoPago = cliente.getTiempoPago();
 
-        // Acumular tiempos (solo necesitamos las sumas, no cada cliente)
         tiempoTotalEspera += tiempoEspera;
         tiempoTotalPago += tiempoPago;
 

@@ -9,7 +9,6 @@ import java.util.Random;
 
 /**
  * Clase abstracta base para las simulaciones de Costco
- * Define el comportamiento común de ambas estrategias
  */
 public abstract class Simulacion {
 
@@ -17,8 +16,8 @@ public abstract class Simulacion {
     private static final double TIEMPO_LLEGADA_MAX = 1.0;
     protected static final int TIEMPO_SIMULACION = 600;  // 10 horas en minutos
     protected static final int NUM_CAJAS = 12;
-    protected static final int UMBRAL_ABRIR_CAJA = 4;    // Clientes para abrir caja
-    protected static final int UMBRAL_CERRAR_CAJA = 3;   // Clientes para cerrar caja
+    protected static final int UMBRAL_ABRIR_CAJA = 4;
+    protected static final int UMBRAL_CERRAR_CAJA = 3;
 
     protected Random random;
     protected int tiempoActual;

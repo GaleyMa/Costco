@@ -24,20 +24,16 @@ public class ClienteGrafico extends ImageView {
     public ClienteGrafico(Cliente cliente, double entradaX, double entradaY) {
         super();
         this.cliente = cliente;
-
-        // Configurar propiedades básicas
         setFitWidth(40);
         setFitHeight(50);
         setPreserveRatio(true);
         setLayoutX(entradaX);
         setLayoutY(entradaY);
 
-        // Solo asignar imágenes y actualizar si el cliente no es null
         if (cliente != null) {
             asignarImagenesCliente();
             actualizarImagen();
         } else {
-            // Para cliente null, cargar una imagen por defecto y ocultar
             cargarImagenPorDefecto();
             setVisible(false);
         }
@@ -47,12 +43,10 @@ public class ClienteGrafico extends ImageView {
         this.cliente = cliente;
 
         if (cliente != null) {
-            // Si es un nuevo cliente, asignar imágenes y hacer visible
             asignarImagenesCliente();
             setVisible(true);
             actualizarImagen();
         } else {
-            // Si se establece null, ocultar y usar imagen por defecto
             setVisible(false);
             cargarImagenPorDefecto();
         }
@@ -63,24 +57,20 @@ public class ClienteGrafico extends ImageView {
     }
 
     public void actualizarImagen() {
-        // Verificar si cliente es null
         if (cliente == null) {
             setVisible(false);
             return;
         }
 
-        // Verificar si el estado del cliente es null
         Estado estado = cliente.getEstado();
         if (estado == null) {
-            setImage(imagenEsperando); // Usar imagen por defecto
+            setImage(imagenEsperando);
             setVisible(true);
             return;
         }
 
-        // Determinar la imagen basada en el estado
         Image nuevaImagen = (estado == Estado.PAGANDO) ? imagenPagando : imagenEsperando;
 
-        // Actualizar la imagen en el hilo de JavaFX
         if (getImage() != nuevaImagen) {
             Platform.runLater(() -> {
                 setImage(nuevaImagen);
@@ -90,7 +80,6 @@ public class ClienteGrafico extends ImageView {
     }
 
     public void moverA(double destinoX, double destinoY, double duracionMs) {
-        // Detener cualquier animación previa
         if (transicionActiva != null) {
             transicionActiva.stop();
         }
@@ -99,23 +88,20 @@ public class ClienteGrafico extends ImageView {
         double deltaX = destinoX - getLayoutX();
         double deltaY = destinoY - getLayoutY();
 
-        // Crear y configurar la transición
         transicionActiva = new TranslateTransition(Duration.millis(duracionMs), this);
         transicionActiva.setToX(deltaX);
         transicionActiva.setToY(deltaY);
 
-        // Configurar lo que pasa cuando termina la animación
+        // Configura lo que pasa cuando termina la animación
         transicionActiva.setOnFinished(e -> {
-            // Actualizar la posición real
+
             setLayoutX(destinoX);
             setLayoutY(destinoY);
-            // Resetear las traducciones
             setTranslateX(0);
             setTranslateY(0);
             transicionActiva = null;
         });
 
-        // Iniciar la animación
         transicionActiva.play();
     }
 
@@ -125,7 +111,6 @@ public class ClienteGrafico extends ImageView {
             imagenEsperando = cargarImagen("/imagenes/cliente" + numero + ".png");
             imagenPagando = cargarImagen("/imagenes/cliente" + numero + "_pagando.png");
 
-            // Verificar que las imágenes se cargaron correctamente
             if (imagenEsperando == null || imagenPagando == null) {
                 cargarImagenPorDefecto();
             }

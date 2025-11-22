@@ -5,17 +5,13 @@ import costco.sim.logica.Cliente;
 import costco.sim.logica.Cola;
 
 /**
- * Simulación con estrategia de FILA ÚNICA
- * Todos los clientes esperan en una fila general
- * Se asignan a cajas disponibles cuando hay espacio
+ * Simulación de modo fila unica
  */
 public class SimulacionFilaUnica extends Simulacion {
 
     private static final int MAX_CLIENTES_POR_CAJA = 3;
     private static final int CAPACIDAD_FILA_GENERAL = 100;
     private static final int CAJAS_INICIALES = 2;
-
-
     private Cola<Cliente> filaGeneral;
 
 
@@ -59,10 +55,6 @@ public class SimulacionFilaUnica extends Simulacion {
     private void evaluarAperturaCaja() {
         int totalClientes = filaGeneral.tamanio() + getClientesEsperandoTotal();
 
-        System.out.println("DEBUG: Total clientes: " + totalClientes +
-                ", Cajas abiertas: " + getCajasAbiertas());
-
-        // Abrir cajas progresivamente según la carga
         if (totalClientes >= 8 && getCajasAbiertas() < 4) {
             abrirSiguienteCaja();
         } else if (totalClientes >= 16 && getCajasAbiertas() < 6) {
@@ -80,7 +72,7 @@ public class SimulacionFilaUnica extends Simulacion {
             for (Caja caja : cajas) {
                 if (caja.estaAbierta() && caja.cantidadClientes() >= MAX_CLIENTES_POR_CAJA) {
                     if (abrirSiguienteCaja()) {
-                        System.out.println("DEBUG: Caja abierta porque caja " + caja.getNumeroCaja() + " está llena");
+                        //System.out.println("Caja abierta porque caja " + caja.getNumeroCaja() + " está llena");
                     }
                     break;
                 }

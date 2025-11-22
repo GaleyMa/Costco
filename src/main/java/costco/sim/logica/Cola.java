@@ -7,7 +7,7 @@ public class Cola<T> {
     private int MAX;
 
     public Cola() {
-        this(10); // Delegar al constructor con parámetro
+        this(10);
     }
 
     public Cola(int max) {
@@ -52,7 +52,7 @@ public class Cola<T> {
         }
 
         T dato = cola[inicio];
-        cola[inicio] = null; // Liberar referencia para GC
+        cola[inicio] = null;
 
         if (inicio == fin) {
             // Cola quedó vacía
